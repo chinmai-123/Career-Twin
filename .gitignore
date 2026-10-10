@@ -1,0 +1,29 @@
+# Node & Frontend
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.vite/
+**/.vite/
+*.log
+
+# Java & Backend
+target/
+**/target/
+*.class
+*.jar
+*.war
+uploads/
+**/uploads/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE & OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Local Archives
+*.zip
