@@ -12,4 +12,9 @@ echo Both servers are launching!
 echo Backend:  http://localhost:8085/api
 echo Frontend: http://localhost:5173/
 echo.
+echo Opening browser in 4 seconds...
+timeout /t 4 /nobreak >nul
+start http://localhost:5173
+echo.
+echo You can keep this window open or close it.
 pause
