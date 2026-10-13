@@ -1,5 +1,5 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '../utils/storage';
 import { getBaseUrl } from '../config/apiConfig';
 
 const api = axios.create({
@@ -14,12 +14,12 @@ api.interceptors.request.use(
   async (config) => {
     config.baseURL = getBaseUrl();
     try {
-      const token = await AsyncStorage.getItem('@careertwin_token');
+      const token = await storage.getItem('@careertwin_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (e) {
-      console.warn('Could not read auth token from AsyncStorage', e);
+      // Ignored
     }
     return config;
   },

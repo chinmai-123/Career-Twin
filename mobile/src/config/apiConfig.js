@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '../utils/storage';
 import { Platform } from 'react-native';
 
 const STORAGE_KEY = '@careertwin_api_base_url';
@@ -23,12 +23,12 @@ let currentBaseUrl = getDefaultBaseUrl();
 
 export const initBaseUrl = async () => {
   try {
-    const saved = await AsyncStorage.getItem(STORAGE_KEY);
+    const saved = await storage.getItem(STORAGE_KEY);
     if (saved && saved.trim()) {
       currentBaseUrl = saved.trim();
     }
   } catch (err) {
-    console.warn('Could not read saved API URL from storage:', err);
+    // Silent fallback
   }
   return currentBaseUrl;
 };
@@ -45,7 +45,7 @@ export const setCustomBaseUrl = async (url) => {
     formatted = formatted.replace(/\/+$/, '') + '/api';
   }
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, formatted);
+    await storage.setItem(STORAGE_KEY, formatted);
     currentBaseUrl = formatted;
     return formatted;
   } catch (err) {
@@ -56,7 +56,7 @@ export const setCustomBaseUrl = async (url) => {
 
 export const resetBaseUrlToDefault = async () => {
   try {
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    await storage.removeItem(STORAGE_KEY);
     currentBaseUrl = getDefaultBaseUrl();
     return currentBaseUrl;
   } catch (err) {

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '../utils/storage';
 import { authApi, profileApi } from '../services/api';
 import { initBaseUrl } from '../config/apiConfig';
 
@@ -17,8 +17,8 @@ export const AuthProvider = ({ children }) => {
     const bootstrap = async () => {
       try {
         await initBaseUrl();
-        const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
-        const storedUser = await AsyncStorage.getItem(USER_KEY);
+        const storedToken = await storage.getItem(TOKEN_KEY);
+        const storedUser = await storage.getItem(USER_KEY);
         if (storedToken && storedUser) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
@@ -28,14 +28,14 @@ export const AuthProvider = ({ children }) => {
             const profileData = profileRes?.data || profileRes;
             if (profileData) {
               setUser(profileData);
-              await AsyncStorage.setItem(USER_KEY, JSON.stringify(profileData));
+              await storage.setItem(USER_KEY, JSON.stringify(profileData));
             }
           } catch (e) {
-            console.log('Background profile refresh skipped:', e.message);
+            // Background refresh optional
           }
         }
       } catch (err) {
-        console.error('Failed to restore auth session:', err);
+        // Handled silently
       } finally {
         setLoading(false);
       }
@@ -58,8 +58,8 @@ export const AuthProvider = ({ children }) => {
         graduationYear: payload.graduationYear,
         roles: payload.roles,
       };
-      await AsyncStorage.setItem(TOKEN_KEY, authToken);
-      await AsyncStorage.setItem(USER_KEY, JSON.stringify(authUser));
+      await storage.setItem(TOKEN_KEY, authToken);
+      await storage.setItem(USER_KEY, JSON.stringify(authUser));
       setToken(authToken);
       setUser(authUser);
       return authUser;
@@ -81,8 +81,8 @@ export const AuthProvider = ({ children }) => {
         graduationYear: payload.graduationYear,
         roles: payload.roles,
       };
-      await AsyncStorage.setItem(TOKEN_KEY, authToken);
-      await AsyncStorage.setItem(USER_KEY, JSON.stringify(authUser));
+      await storage.setItem(TOKEN_KEY, authToken);
+      await storage.setItem(USER_KEY, JSON.stringify(authUser));
       setToken(authToken);
       setUser(authUser);
       return authUser;
@@ -99,15 +99,15 @@ export const AuthProvider = ({ children }) => {
   const updateUser = async (updatedData) => {
     const newUser = { ...user, ...updatedData };
     setUser(newUser);
-    await AsyncStorage.setItem(USER_KEY, JSON.stringify(newUser));
+    await storage.setItem(USER_KEY, JSON.stringify(newUser));
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem(TOKEN_KEY);
-      await AsyncStorage.removeItem(USER_KEY);
+      await storage.removeItem(TOKEN_KEY);
+      await storage.removeItem(USER_KEY);
     } catch (e) {
-      console.error('Error clearing storage on logout:', e);
+      // Ignored
     }
     setToken(null);
     setUser(null);
