@@ -19,18 +19,22 @@ const LandingPage = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '9px',
-            background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-            color: '#fff',
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            backgroundColor: '#151E27',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontWeight: 'bold',
-            fontSize: '18px'
+            overflow: 'hidden',
+            boxShadow: '0 4px 10px rgba(21, 30, 39, 0.25)',
+            flexShrink: 0
           }}>
-            CT
+            <img
+              src="/logo.png"
+              alt="CareerTwin Logo"
+              style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+            />
           </div>
           <span style={{ fontSize: '1.3rem', fontWeight: '800', color: '#1e3a8a' }}>CareerTwin</span>
         </div>
@@ -269,7 +273,22 @@ const LandingPage = () => {
         fontSize: '0.88rem',
         color: '#64748b'
       }}>
-        <p><strong>CareerTwin</strong> &bull; AI-Powered Placement Readiness and Career Guidance Platform</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+          <div style={{
+            width: '26px',
+            height: '26px',
+            borderRadius: '7px',
+            backgroundColor: '#151E27',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            verticalAlign: 'middle'
+          }}>
+            <img src="/logo.png" alt="CareerTwin" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+          </div>
+          <strong style={{ color: '#0f172a' }}>CareerTwin</strong> &bull; AI-Powered Placement Readiness and Career Guidance Platform
+        </div>
         <p style={{ fontSize: '0.78rem', marginTop: '4px' }}>Developed with React 18, Spring Boot 3, MySQL 8, and Google Gemini AI &bull; B.Tech Final Year Academic Project</p>
       </footer>
     </div>

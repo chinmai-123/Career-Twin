@@ -77,16 +77,19 @@ const Sidebar = () => {
           width: '38px',
           height: '38px',
           borderRadius: '10px',
-          background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+          backgroundColor: '#151E27',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#ffffff',
-          fontWeight: 'bold',
-          fontSize: '18px',
-          boxShadow: '0 4px 10px rgba(37,99,235,0.3)'
+          overflow: 'hidden',
+          boxShadow: '0 4px 10px rgba(21, 30, 39, 0.25)',
+          flexShrink: 0
         }}>
-          CT
+          <img
+            src="/logo.png"
+            alt="CareerTwin Logo"
+            style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+          />
         </div>
         <div>
           <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#1e3a8a', letterSpacing: '-0.02em', lineHeight: '1.1' }}>

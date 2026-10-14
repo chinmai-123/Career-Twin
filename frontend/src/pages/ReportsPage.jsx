@@ -73,12 +73,28 @@ const ReportsPage = () => {
           paddingBottom: '20px',
           marginBottom: '28px'
         }}>
-          <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#1e3a8a', letterSpacing: '-0.02em' }}>
-              CAREERTWIN EVALUATION REPORT
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              backgroundColor: '#151E27',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(21, 30, 39, 0.2)'
+            }}>
+              <img src="/logo.png" alt="CareerTwin" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
             </div>
-            <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '2px' }}>
-              Autonomous Placement Readiness & Digital Twin Assessment Platform
+            <div>
+              <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#1e3a8a', letterSpacing: '-0.02em' }}>
+                CAREERTWIN EVALUATION REPORT
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '2px' }}>
+                Autonomous Placement Readiness & Digital Twin Assessment Platform
+              </div>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>

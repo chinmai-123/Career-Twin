@@ -55,19 +55,22 @@ const RegisterPage = () => {
       <div className="card" style={{ maxWidth: '580px', width: '100%', padding: '36px' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{
-            width: '46px',
-            height: '46px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-            color: '#fff',
+            width: '60px',
+            height: '60px',
+            borderRadius: '16px',
+            backgroundColor: '#151E27',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 12px',
-            fontSize: '22px',
-            fontWeight: 'bold'
+            margin: '0 auto 14px',
+            overflow: 'hidden',
+            boxShadow: '0 6px 16px rgba(21, 30, 39, 0.28)'
           }}>
-            CT
+            <img
+              src="/logo.png"
+              alt="CareerTwin Logo"
+              style={{ width: '50px', height: '50px', objectFit: 'contain' }}
+            />
           </div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: '800', color: '#1e293b' }}>
             Student Registration
