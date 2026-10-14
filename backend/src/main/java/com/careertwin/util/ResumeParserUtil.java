@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 /**
  * Utility for parsing resume text and performing multi-dimensional
- * Enhancv/Jobscan-aligned ATS scoring.
+ * Enhancv/Jobscan-aligned ATS scoring calibrated for student & entry-level profiles.
  */
 public class ResumeParserUtil {
 
@@ -110,9 +110,9 @@ public class ResumeParserUtil {
      * Enhancv Pillar: Contact Information & Professional Web Presence (0 - 100)
      */
     public static int calculateContactScore(String text) {
-        if (text == null || text.isEmpty()) return 40;
+        if (text == null || text.isEmpty()) return 30;
         String lower = text.toLowerCase();
-        int score = 50;
+        int score = 20;
 
         // Email check
         if (lower.contains("@") && (lower.contains(".com") || lower.contains(".edu") || lower.contains(".in") || lower.contains(".org") || lower.contains(".net"))) {
@@ -126,20 +126,20 @@ public class ResumeParserUtil {
 
         // LinkedIn profile presence
         if (hasLinkedIn(text)) {
-            score += 15;
+            score += 16;
         }
 
         // GitHub / Portfolio presence
         if (hasGitHub(text)) {
-            score += 15;
+            score += 12;
         }
 
         // Location check (City / State / Country)
         if (lower.contains("india") || lower.contains("telangana") || lower.contains("hyderabad") || lower.contains("khammam") || lower.contains("kamareddy") || lower.contains("bangalore") || lower.contains("pune")) {
-            score += 10;
+            score += 8;
         }
 
-        return Math.min(100, Math.max(50, score));
+        return Math.min(92, Math.max(30, score));
     }
 
     public static boolean hasLinkedIn(String text) {
@@ -156,10 +156,11 @@ public class ResumeParserUtil {
 
     /**
      * Enhancv Pillar: Quantified Impact & Measurable Metrics (0 - 100)
-     * Real commercial ATS scanners look for metrics, academic percentages, scale, and dates.
+     * Commercial ATS calibration for student / entry-level profiles:
+     * College projects typically feature academic percentages and qualitative scopes (68% - 74%).
      */
     public static int calculateQuantifiedImpactScore(String text) {
-        if (text == null || text.isEmpty()) return 50;
+        if (text == null || text.isEmpty()) return 40;
 
         // Detect percentages (e.g. 35%, 99.9%, 40%, 72.09%, 95%)
         Pattern percentPattern = Pattern.compile("\\b\\d+(?:\\.\\d+)?%");
@@ -194,21 +195,21 @@ public class ResumeParserUtil {
         int totalMetrics = percentCount + metricCount + gradeCount + genericCount + Math.min(2, dateCount);
 
         // Enhancv-calibrated commercial scale:
-        // Student resumes with standard qualitative descriptions start at 74%
-        // Measurable impact metrics raise the score to high 80s and 90s
-        if (totalMetrics == 0) return 74;
-        if (totalMetrics == 1) return 80;
-        if (totalMetrics == 2) return 84;
-        if (totalMetrics == 3) return 88;
-        if (totalMetrics == 4) return 92;
-        return Math.min(98, 92 + (totalMetrics - 4) * 2);
+        // Student resumes with academic percentages and qualitative outcomes land in 68% - 74%
+        if (totalMetrics == 0) return 55;
+        if (totalMetrics == 1) return 63;
+        if (totalMetrics == 2) return 68;
+        if (totalMetrics == 3) return 71;
+        if (totalMetrics == 4) return 74;
+        if (totalMetrics == 5) return 77;
+        return Math.min(88, 77 + (totalMetrics - 5) * 2);
     }
 
     /**
      * Enhancv Pillar: Action Verbs Strength vs Passive Phrasing (0 - 100)
      */
     public static int calculateActionVerbScore(String text) {
-        if (text == null || text.isEmpty()) return 60;
+        if (text == null || text.isEmpty()) return 45;
         String lower = text.toLowerCase();
 
         int strongCount = 0;
@@ -225,11 +226,11 @@ public class ResumeParserUtil {
             while (m.find()) weakCount++;
         }
 
-        // Base starts at 72.
-        // Strong power verbs award +4 each (up to +24).
+        // Base starts at 65.
+        // Strong power verbs award +2 each (up to +11).
         // Weak passive verbs penalize -3 each.
-        int score = 72 + Math.min(24, strongCount * 4) - (weakCount * 3);
-        return Math.min(98, Math.max(55, score));
+        int score = 65 + Math.min(11, strongCount * 2) - (weakCount * 3);
+        return Math.min(90, Math.max(45, score));
     }
 
     public static List<String> getPassivePhrasesFound(String text) {
@@ -246,78 +247,84 @@ public class ResumeParserUtil {
 
     /**
      * Enhancv Pillar: Section Completeness & Layout Hygiene (0 - 100)
+     * Commercial standard: Full-time corporate experience is required to score 90%+.
+     * Good college student profiles (Education, Skills, Projects, Certifications) score 74% - 77%.
      */
     public static int calculateSectionCompleteness(Map<String, String> sections, String text) {
-        int score = 50; // Solid baseline for an uploaded resume
+        int score = 25; // Baseline for structured document
         String lower = text != null ? text.toLowerCase() : "";
 
-        // 1. Education (up to +15 pts)
+        // 1. Education (up to +16 pts)
         if (sections.containsKey("EDUCATION") || lower.contains("education") || lower.contains("b.tech") || lower.contains("bachelor") || lower.contains("intermediate")) {
-            score += 10;
+            score += 11;
             if (lower.contains("cgpa") || lower.contains("gpa") || lower.contains("%") || lower.contains("percentile") || lower.contains("grade")) {
                 score += 5;
             }
         }
 
-        // 2. Skills (up to +15 pts)
+        // 2. Skills (up to +14 pts)
         if (sections.containsKey("SKILLS") || lower.contains("technical skills") || lower.contains("skills")) {
-            score += 15;
+            score += 14;
         }
 
-        // 3. Projects (up to +15 pts)
+        // 3. Projects (up to +14 pts)
         if (sections.containsKey("PROJECTS") || lower.contains("projects") || lower.contains("developed") || lower.contains("built")) {
-            score += 15;
+            score += 14;
         }
 
-        // 4. Experience / Certifications / Extracurricular (up to +15 pts)
-        if (sections.containsKey("EXPERIENCE") || sections.containsKey("CERTIFICATIONS") ||
-            lower.contains("certifications") || lower.contains("certification") || lower.contains("experience") ||
-            lower.contains("internship") || lower.contains("achievements") || lower.contains("springboard") || lower.contains("mathworks") || lower.contains("aws")) {
-            score += 15;
+        // 4. Experience / Internship vs Student Certification Gap (up to +18 pts)
+        boolean hasCorporateExperience = lower.contains("work experience") || lower.contains("employment history") || lower.contains("professional experience");
+        boolean hasInternship = lower.contains("internship") || lower.contains("intern ");
+        boolean hasCertifications = sections.containsKey("CERTIFICATIONS") || lower.contains("certifications") || lower.contains("certification") ||
+                lower.contains("springboard") || lower.contains("mathworks") || lower.contains("aws simulearn");
+
+        if (hasCorporateExperience) {
+            score += 18;
+        } else if (hasInternship) {
+            score += 11;
+        } else if (hasCertifications) {
+            score += 5; // Certifications partially offset experience gap for students
         }
 
-        // 5. Objective / Summary (+5 pts)
+        // 5. Objective / Summary (+4 pts)
         if (sections.containsKey("OBJECTIVE") || lower.contains("objective") || lower.contains("summary") || lower.contains("profile")) {
-            score += 5;
+            score += 4;
         }
 
-        // Length hygiene check (only penalize extreme outliers)
+        // Length hygiene check
         int wordCount = text != null ? text.split("\\s+").length : 0;
         if (wordCount < 80) {
-            score -= 20; // Extremely short/empty resume
-        } else if (wordCount > 1100) {
-            score -= 8; // Heavy multi-page bloat
+            score -= 16;
+        } else if (wordCount > 1000) {
+            score -= 6;
         }
 
-        return Math.min(100, Math.max(50, score));
+        return Math.min(90, Math.max(35, score));
     }
 
     /**
      * Formatting Score: Bullet Point Structure & Page Balance (0 - 100)
      */
     public static int calculateFormattingScore(String text) {
-        if (text == null || text.trim().isEmpty()) return 50;
+        if (text == null || text.trim().isEmpty()) return 40;
         int wordCount = text.split("\\s+").length;
-        int score = 65; // High baseline for clean machine-readable PDFs
+        int score = 58; // Clean machine-readable PDF baseline
 
-        // Ideal word count for 1-page student resume (150 - 750 words)
-        if (wordCount >= 200 && wordCount <= 700) {
-            score += 15;
-        } else if (wordCount >= 120 && wordCount < 200) {
-            score += 10;
+        // Ideal word count for 1-page student resume (140 - 700 words)
+        if (wordCount >= 140 && wordCount <= 700) {
+            score += 9;
+        } else if (wordCount >= 100 && wordCount < 140) {
+            score += 6;
         } else if (wordCount > 700 && wordCount <= 900) {
-            score += 8;
-        } else {
             score += 4;
         }
 
         // Section structure & timeline markers (e.g. 2023-2027, 2021-2023, 02/2026)
         if (text.contains("202") || text.contains("201")) {
-            score += 8;
+            score += 4;
         }
 
         // Bullet point / structured formatting detection
-        // In extracted PDF text, bullets appear as bullets, dashes, question marks (encoding), or distinct lines
         long bulletCount = text.lines()
                 .filter(l -> {
                     String t = l.trim();
@@ -326,27 +333,25 @@ public class ResumeParserUtil {
                 })
                 .count();
 
-        if (bulletCount >= 3) {
-            score += 8;
-        } else if (text.contains("Developed") || text.contains("Built") || text.contains("Designed")) {
-            score += 6; // Structured action items
+        if (bulletCount >= 3 || text.contains("Developed") || text.contains("Built")) {
+            score += 3;
         }
 
         // Professional links bonus
         if (hasLinkedIn(text) || hasGitHub(text)) {
-            score += 4;
+            score += 2;
         }
 
-        return Math.min(98, Math.max(60, score));
+        return Math.min(88, Math.max(45, score));
     }
 
     /**
      * Readability Score: Average Sentence Length and Vocabulary Diversity (0 - 100)
      */
     public static int calculateReadabilityScore(String text) {
-        if (text == null || text.trim().isEmpty()) return 60;
+        if (text == null || text.trim().isEmpty()) return 50;
         String[] sentences = text.split("[.!?\\n]+");
-        if (sentences.length == 0) return 75;
+        if (sentences.length == 0) return 72;
 
         int validSentences = 0;
         int wordsInValid = 0;
@@ -358,25 +363,25 @@ public class ResumeParserUtil {
                 wordsInValid += w;
             }
         }
-        if (validSentences == 0) return 75;
+        if (validSentences == 0) return 72;
 
         double avgLength = (double) wordsInValid / validSentences;
-        int base = 70;
+        int base = 65;
 
         // Optimal sentence / bullet length: 8 - 25 words
         if (avgLength >= 8.0 && avgLength <= 25.0) {
-            base += 16;
-        } else {
             base += 8;
+        } else {
+            base += 4;
         }
 
         // Vocabulary diversity bonus (Unique words / Total words)
         String[] wordsArr = text.toLowerCase().split("\\W+");
         Set<String> uniqueWords = new HashSet<>(Arrays.asList(wordsArr));
         double diversity = (double) uniqueWords.size() / Math.max(1, wordsArr.length);
-        int diversityBonus = (int) Math.round(diversity * 10);
+        int diversityBonus = (int) Math.round(diversity * 5);
 
-        return Math.min(96, Math.max(65, base + diversityBonus));
+        return Math.min(88, Math.max(55, base + diversityBonus));
     }
 
     /**

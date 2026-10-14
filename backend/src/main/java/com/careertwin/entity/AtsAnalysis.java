@@ -44,14 +44,15 @@ public class AtsAnalysis {
     @Column(columnDefinition = "TEXT")
     private String weaknessesJson;
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime analyzedAt;
 
     public AtsAnalysis() {
     }
 
     @PrePersist
-    protected void onCreate() {
+    @PreUpdate
+    protected void onPersistOrUpdate() {
         this.analyzedAt = LocalDateTime.now();
     }
 
