@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { careerTwinApi, progressApi, challengeApi } from '../services/api';
+import { careerTwinApi, progressApi, challengeApi, assessmentApi } from '../services/api';
 import ScoreGauge from '../components/ScoreGauge';
 import {
   FileText,
@@ -33,17 +33,23 @@ const DashboardPage = () => {
   const { user } = useAuth();
   const [twin, setTwin] = useState(null);
   const [progress, setProgress] = useState(null);
+  const [assessmentResults, setAssessmentResults] = useState([]);
+  const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
-      const [twinRes, progressRes] = await Promise.all([
+      const [twinRes, progressRes, challRes, assessRes] = await Promise.allSettled([
         careerTwinApi.getCareerTwin(),
-        progressApi.getProgress()
+        progressApi.getProgress(),
+        challengeApi.getChallenges(),
+        assessmentApi.getResults()
       ]);
-      setTwin(twinRes.data);
-      setProgress(progressRes.data);
+      if (twinRes.status === 'fulfilled') setTwin(twinRes.value?.data);
+      if (progressRes.status === 'fulfilled') setProgress(progressRes.value?.data);
+      if (challRes.status === 'fulfilled') setChallenges(challRes.value?.data || []);
+      if (assessRes.status === 'fulfilled') setAssessmentResults(assessRes.value?.data || []);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
@@ -60,14 +66,38 @@ const DashboardPage = () => {
     try {
       const res = await careerTwinApi.recalculate();
       setTwin(res.data);
-      const progRes = await progressApi.getProgress();
-      setProgress(progRes.data);
+      const [progRes, challRes, assessRes] = await Promise.allSettled([
+        progressApi.getProgress(),
+        challengeApi.getChallenges(),
+        assessmentApi.getResults()
+      ]);
+      if (progRes.status === 'fulfilled') setProgress(progRes.value?.data);
+      if (challRes.status === 'fulfilled') setChallenges(challRes.value?.data || []);
+      if (assessRes.status === 'fulfilled') setAssessmentResults(assessRes.value?.data || []);
     } catch (err) {
       console.error('Recalculate failed:', err);
     } finally {
       setRecalculating(false);
     }
   };
+
+  const examsCount = assessmentResults.length > 0
+    ? assessmentResults.length
+    : (twin?.examsTakenCount || 0);
+
+  const avgAssessmentScore = assessmentResults.length > 0
+    ? Math.round(assessmentResults.reduce((acc, curr) => acc + (curr.scorePercentage || 0), 0) / assessmentResults.length)
+    : (twin?.assessmentScore || 0);
+
+  const totalChallenges = challenges.length > 0
+    ? challenges.length
+    : (twin?.totalChallenges || 5);
+
+  const completedChallenges = challenges.length > 0
+    ? challenges.filter(c => c.isCompleted).length
+    : (twin?.weeklyChallengesCompleted || 0);
+
+  const challengeProgress = totalChallenges > 0 ? Math.round((completedChallenges / totalChallenges) * 100) : 0;
 
   if (loading) {
     return (
@@ -263,10 +293,13 @@ const DashboardPage = () => {
               Verified Assessments
             </div>
             <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#1e293b' }}>
-              {twin?.assessmentScore || 0}%
+              {avgAssessmentScore}%
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '500', marginBottom: '2px' }}>
+              {examsCount} Exam{examsCount === 1 ? '' : 's'} Taken
             </div>
             <Link to="/skill-verification" style={{ fontSize: '0.78rem', color: '#d97706', fontWeight: '600' }}>
-              Take assessment &rarr;
+              {examsCount > 0 ? 'Review & retake →' : 'Take first assessment →'}
             </Link>
           </div>
         </div>
@@ -418,10 +451,10 @@ const DashboardPage = () => {
               <span>Weekly Placement Challenges</span>
             </div>
             <Link to="/challenges" className="btn btn-outline" style={{ fontSize: '0.78rem', padding: '4px 10px' }}>
-              View All
+              View All ({totalChallenges})
             </Link>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '12px' }}>
             <div style={{
               background: '#fef3c7',
               color: '#92400e',
@@ -430,11 +463,21 @@ const DashboardPage = () => {
               fontWeight: '700',
               fontSize: '1.1rem'
             }}>
-              {twin?.weeklyChallengesCompleted || 0} / {twin?.totalChallenges || 5}
+              {completedChallenges} / {totalChallenges} Done
             </div>
             <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-              Challenges completed. Keep consistent daily problem solving to boost your coding rank!
+              {completedChallenges === totalChallenges && totalChallenges > 0
+                ? 'All placement challenges completed this week! 🏆'
+                : (completedChallenges > 0
+                    ? `${challengeProgress}% consistency rate. Keep building momentum!`
+                    : '0 challenges completed this week. Solve micro-tasks to boost your rank!')}
             </div>
+          </div>
+          <div className="progress-container" style={{ marginBottom: '14px', height: '8px' }}>
+            <div
+              className="progress-fill"
+              style={{ width: `${challengeProgress}%`, background: '#f59e0b' }}
+            />
           </div>
           <Link to="/challenges" className="btn btn-secondary" style={{ width: '100%' }}>
             Solve Placement Challenges &rarr;

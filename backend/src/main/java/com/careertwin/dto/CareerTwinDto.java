@@ -21,6 +21,14 @@ public class CareerTwinDto {
     private Integer roadmapProgress; // 0 - 100%
     private Integer weeklyChallengesCompleted;
     private Integer totalChallenges;
+    private Integer completedChallengesCount;
+    private Integer challengeConsistencyScore;
+    private Integer examsTakenCount;
+    private Integer verifiedSkillsCount;
+    private Integer codingPlatformsCount;
+    private String readinessTier;
+    private Integer placementReadinessScore;
+    private Integer resumeAtsScore;
     private LocalDateTime lastUpdated;
 
     public CareerTwinDto() {
@@ -160,6 +168,70 @@ public class CareerTwinDto {
 
     public void setTotalChallenges(Integer totalChallenges) {
         this.totalChallenges = totalChallenges;
+    }
+
+    public Integer getCompletedChallengesCount() {
+        return completedChallengesCount;
+    }
+
+    public void setCompletedChallengesCount(Integer completedChallengesCount) {
+        this.completedChallengesCount = completedChallengesCount;
+    }
+
+    public Integer getChallengeConsistencyScore() {
+        return challengeConsistencyScore;
+    }
+
+    public void setChallengeConsistencyScore(Integer challengeConsistencyScore) {
+        this.challengeConsistencyScore = challengeConsistencyScore;
+    }
+
+    public Integer getExamsTakenCount() {
+        return examsTakenCount;
+    }
+
+    public void setExamsTakenCount(Integer examsTakenCount) {
+        this.examsTakenCount = examsTakenCount;
+    }
+
+    public Integer getVerifiedSkillsCount() {
+        return verifiedSkillsCount;
+    }
+
+    public void setVerifiedSkillsCount(Integer verifiedSkillsCount) {
+        this.verifiedSkillsCount = verifiedSkillsCount;
+    }
+
+    public Integer getCodingPlatformsCount() {
+        return codingPlatformsCount;
+    }
+
+    public void setCodingPlatformsCount(Integer codingPlatformsCount) {
+        this.codingPlatformsCount = codingPlatformsCount;
+    }
+
+    public String getReadinessTier() {
+        return readinessTier;
+    }
+
+    public void setReadinessTier(String readinessTier) {
+        this.readinessTier = readinessTier;
+    }
+
+    public Integer getPlacementReadinessScore() {
+        return placementReadinessScore;
+    }
+
+    public void setPlacementReadinessScore(Integer placementReadinessScore) {
+        this.placementReadinessScore = placementReadinessScore;
+    }
+
+    public Integer getResumeAtsScore() {
+        return resumeAtsScore;
+    }
+
+    public void setResumeAtsScore(Integer resumeAtsScore) {
+        this.resumeAtsScore = resumeAtsScore;
     }
 
     public LocalDateTime getLastUpdated() {

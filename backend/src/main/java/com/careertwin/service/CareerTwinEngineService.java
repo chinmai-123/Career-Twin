@@ -377,10 +377,35 @@ public class CareerTwinEngineService {
             dto.setRoadmapProgress(0);
         }
 
-        // Challenges
+        // Taken Exams / Assessments
+        List<AssessmentResult> assessments = assessmentResultRepository.findByUserIdOrderByCompletedAtDesc(user.getId());
+        dto.setExamsTakenCount(assessments.size());
+
+        // Coding platforms count
+        List<CodingProfile> codingProfiles = codingProfileRepository.findByUserId(user.getId());
+        dto.setCodingPlatformsCount(codingProfiles.size());
+
+        // Verified skills count
+        List<UserSkill> userSkills = userSkillRepository.findByUserId(user.getId());
+        dto.setVerifiedSkillsCount(userSkills.size());
+
+        // Challenges metrics
         List<WeeklyChallenge> challenges = weeklyChallengeRepository.findByUserIdOrderByWeekNumberAsc(user.getId());
-        dto.setTotalChallenges(challenges.size());
-        dto.setWeeklyChallengesCompleted((int) challenges.stream().filter(c -> Boolean.TRUE.equals(c.getIsCompleted())).count());
+        int totalChall = challenges.size();
+        int completedChall = (int) challenges.stream().filter(c -> Boolean.TRUE.equals(c.getIsCompleted())).count();
+        dto.setTotalChallenges(totalChall);
+        dto.setWeeklyChallengesCompleted(completedChall);
+        dto.setCompletedChallengesCount(completedChall);
+        dto.setChallengeConsistencyScore(totalChall > 0 ? (int) Math.round(((double) completedChall / totalChall) * 100) : 0);
+
+        // Readiness tier & alias scores
+        dto.setPlacementReadinessScore(p.getOverallReadiness());
+        dto.setResumeAtsScore(p.getResumeScore());
+        int readiness = p.getOverallReadiness() != null ? p.getOverallReadiness() : 0;
+        String tier = readiness >= 80 ? "Placement Ready (Top Tier)" :
+                readiness >= 65 ? "Proficient Readiness" :
+                readiness >= 45 ? "Developing Readiness" : "Needs Foundation Building";
+        dto.setReadinessTier(tier);
 
         return dto;
     }
