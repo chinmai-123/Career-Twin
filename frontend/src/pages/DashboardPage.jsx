@@ -268,8 +268,11 @@ const DashboardPage = () => {
             <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#1e293b' }}>
               {twin?.codingScore || 0}%
             </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '500', marginBottom: '2px' }}>
+              {twin?.codingPlatformsCount || 0} Platform{(twin?.codingPlatformsCount || 0) === 1 ? '' : 's'} Linked
+            </div>
             <Link to="/coding-profiles" style={{ fontSize: '0.78rem', color: '#059669', fontWeight: '600' }}>
-              Synced platforms &rarr;
+              {(twin?.codingPlatformsCount || 0) > 0 ? 'Synced platforms →' : 'Connect platform →'}
             </Link>
           </div>
         </div>

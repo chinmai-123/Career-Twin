@@ -145,20 +145,28 @@ public class CodingProfileService {
         }
 
         if ("GITHUB".equals(profile.getPlatform())) {
-            int repos = profile.getPublicRepos() != null ? profile.getPublicRepos() : 5;
-            int contrib = profile.getContributionsCount() != null ? profile.getContributionsCount() : repos * 15 + 30;
+            int repos = profile.getPublicRepos() != null ? profile.getPublicRepos() : 0;
+            int contrib = profile.getContributionsCount() != null ? profile.getContributionsCount() : repos * 10;
             profile.setContributionsCount(contrib);
-            profile.setRankName(repos >= 10 ? "Prolific Contributor" : "Active Contributor");
-            profile.setActivityScore(Math.min(98, Math.max(45, repos * 8 + 35)));
-            profile.setDsaScore(Math.min(95, Math.max(50, repos * 6 + 40)));
+            profile.setRankName(repos >= 15 ? "Prolific Contributor" : (repos >= 5 ? "Active Contributor" : (repos > 0 ? "Junior Contributor" : "New Developer")));
+            profile.setActivityScore(repos == 0 ? 0 : Math.min(100, repos * 6 + Math.min(30, contrib / 10)));
+            profile.setDsaScore(repos == 0 ? 0 : Math.min(70, repos * 4));
         } else {
-            int total = profile.getTotalSolved() != null ? profile.getTotalSolved() : 50;
-            int medium = profile.getMediumSolved() != null ? profile.getMediumSolved() : (int) (total * 0.4);
-            int hard = profile.getHardSolved() != null ? profile.getHardSolved() : (int) (total * 0.1);
-            int dsa = Math.min(98, Math.max(45, (int) (total * 0.4 + medium * 0.6 + hard * 2.0 + 25)));
-            profile.setDsaScore(dsa);
-            profile.setActivityScore(Math.min(95, (int) (total * 0.45 + 35)));
-            profile.setRankName(total > 200 ? "Guardian / 4-Star" : (total > 80 ? "Knight / 3-Star" : "Top Problem Solver"));
+            int total = profile.getTotalSolved() != null ? profile.getTotalSolved() : 0;
+            int easy = profile.getEasySolved() != null ? profile.getEasySolved() : 0;
+            int medium = profile.getMediumSolved() != null ? profile.getMediumSolved() : 0;
+            int hard = profile.getHardSolved() != null ? profile.getHardSolved() : 0;
+
+            if (total == 0) {
+                profile.setDsaScore(0);
+                profile.setActivityScore(0);
+                profile.setRankName("Beginner (0 Solved)");
+            } else {
+                int dsa = Math.min(100, (int) (Math.min(20, easy * 0.2) + Math.min(50, medium * 0.6) + Math.min(30, hard * 1.5)));
+                profile.setDsaScore(dsa);
+                profile.setActivityScore(Math.min(100, Math.max(15, (int) (total * 0.35 + 10))));
+                profile.setRankName(total >= 250 ? "Guardian / Expert Coder" : (total >= 120 ? "Knight / Proficient Coder" : (total >= 40 ? "Intermediate Problem Solver" : "Novice Coder")));
+            }
         }
     }
 
@@ -180,6 +188,33 @@ public class CodingProfileService {
         }
     }
 
+    private List<String> fetchGitHubLanguages(String username) {
+        try {
+            String url = "https://api.github.com/users/" + username + "/repos?per_page=10&sort=updated";
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "CareerTwin-App/1.0");
+            headers.set("Accept", "application/vnd.github.v3+json");
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<List> response = restTemplate.exchange(url, HttpMethod.GET, entity, List.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Set<String> langs = new LinkedHashSet<>();
+                for (Object item : response.getBody()) {
+                    if (item instanceof Map) {
+                        Object lang = ((Map) item).get("language");
+                        if (lang instanceof String && !((String) lang).isBlank()) {
+                            langs.add((String) lang);
+                        }
+                    }
+                }
+                if (!langs.isEmpty()) {
+                    return new ArrayList<>(langs);
+                }
+            }
+        } catch (Exception ignored) {}
+        return List.of("Java", "JavaScript");
+    }
+
     private void syncGitHub(CodingProfile profile, String username) {
         try {
             String url = "https://api.github.com/users/" + username;
@@ -195,33 +230,37 @@ public class CodingProfileService {
                 int followers = ((Number) body.getOrDefault("followers", 0)).intValue();
 
                 profile.setPublicRepos(publicRepos);
-                int contrib = Math.max(publicRepos * 18 + followers * 6 + 30,
-                        profile.getContributionsCount() != null ? profile.getContributionsCount() : 45);
+                int contrib = publicRepos * 12 + followers * 4;
                 profile.setContributionsCount(contrib);
                 profile.setVerified(true);
-                profile.setRankName(publicRepos >= 10 ? "Prolific Contributor" : (publicRepos >= 3 ? "Active Contributor" : "Emerging Developer"));
-                profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "JavaScript", "SQL", "HTML")));
-                profile.setActivityScore(Math.min(95, Math.max(40, publicRepos * 8 + 35)));
-                profile.setDsaScore(Math.min(90, Math.max(45, publicRepos * 5 + 40)));
+                profile.setRankName(publicRepos >= 15 ? "Prolific Contributor" : (publicRepos >= 5 ? "Active Contributor" : (publicRepos > 0 ? "Junior Contributor" : "New Developer")));
+
+                List<String> langs = fetchGitHubLanguages(username);
+                profile.setTopLanguagesJson(objectMapper.writeValueAsString(langs));
+
+                int activity = publicRepos == 0 ? 0 : Math.min(95, publicRepos * 6 + Math.min(25, followers * 2));
+                int dsa = publicRepos == 0 ? 0 : Math.min(75, publicRepos * 4);
+                profile.setActivityScore(activity);
+                profile.setDsaScore(dsa);
                 return;
             }
-        } catch (Exception ignored) {
-            // If GitHub API has rate limited or offline, never destroy existing values
-        }
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+            profile.setVerified(false);
+            profile.setRankName("User Not Found on GitHub");
+            profile.setPublicRepos(0);
+            profile.setContributionsCount(0);
+            profile.setActivityScore(0);
+            profile.setDsaScore(0);
+            return;
+        } catch (Exception ignored) {}
 
-        // Only set default fallback if no repos were ever recorded
-        if (profile.getPublicRepos() == null || profile.getPublicRepos() == 0) {
-            int hash = Math.abs(username.toLowerCase().hashCode());
-            int repos = 3 + (hash % 8);
-            profile.setPublicRepos(repos);
-            profile.setContributionsCount(repos * 18 + 45);
-            profile.setVerified(true);
-            profile.setRankName("Active Contributor");
-            try {
-                profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "JavaScript", "SQL")));
-            } catch (Exception ignored) {}
-            profile.setActivityScore(Math.min(92, repos * 8 + 35));
-            profile.setDsaScore(Math.min(88, repos * 5 + 45));
+        if (profile.getPublicRepos() == null) {
+            profile.setPublicRepos(0);
+            profile.setContributionsCount(0);
+            profile.setVerified(false);
+            profile.setRankName("Pending Sync");
+            profile.setActivityScore(0);
+            profile.setDsaScore(0);
         }
     }
 
@@ -262,87 +301,94 @@ public class CodingProfileService {
                     profile.setMediumSolved(medium);
                     profile.setHardSolved(hard);
 
-                    int estimatedRating = Math.max(1400, Math.min(2200, 1450 + (medium * 8) + (hard * 20)));
-                    profile.setRating(estimatedRating);
-                    profile.setRankName(total > 200 ? "Guardian" : (total > 80 ? "Knight" : "Top Problem Solver"));
+                    int rating = 0;
+                    String rankName = "Beginner (0 Solved)";
+                    if (total > 0) {
+                        rating = Math.min(2400, Math.max(1200, 1300 + (easy * 2) + (medium * 7) + (hard * 18)));
+                        if (total >= 250) rankName = "Guardian / Expert Coder";
+                        else if (total >= 120) rankName = "Knight / Proficient Coder";
+                        else if (total >= 40) rankName = "Intermediate Problem Solver";
+                        else rankName = "Novice Coder";
+                    }
+                    profile.setRating(rating);
+                    profile.setRankName(rankName);
                     profile.setVerified(true);
                     profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "C++", "Python")));
 
-                    int dsaScore = Math.min(98, Math.max(45, (int) (easy * 0.2 + medium * 0.9 + hard * 2.5 + 30)));
-                    int activityScore = Math.min(95, Math.max(40, (int) (total * 0.45 + 35)));
+                    int dsaScore = 0;
+                    int activityScore = 0;
+                    if (total > 0) {
+                        dsaScore = Math.min(100, (int) (Math.min(20, easy * 0.2) + Math.min(50, medium * 0.6) + Math.min(30, hard * 1.5)));
+                        activityScore = Math.min(100, Math.max(15, (int) (total * 0.35 + 10)));
+                    }
                     profile.setDsaScore(dsaScore);
                     profile.setActivityScore(activityScore);
                     return;
+                } else if (data != null && data.get("matchedUser") == null) {
+                    profile.setVerified(false);
+                    profile.setRankName("User Not Found on LeetCode");
+                    profile.setTotalSolved(0);
+                    profile.setEasySolved(0);
+                    profile.setMediumSolved(0);
+                    profile.setHardSolved(0);
+                    profile.setRating(0);
+                    profile.setDsaScore(0);
+                    profile.setActivityScore(0);
+                    return;
                 }
             }
-        } catch (Exception ignored) {
-            // LeetCode API offline or network restriction
-        }
+        } catch (Exception ignored) {}
 
-        // Deterministic fallback based on lowercase username
-        if (profile.getTotalSolved() == null || profile.getTotalSolved() == 0) {
-            int hash = Math.abs(username.toLowerCase().hashCode());
-            int easy = 40 + (hash % 35);
-            int medium = 30 + (hash % 30);
-            int hard = 5 + (hash % 8);
-            int total = easy + medium + hard;
-
-            profile.setTotalSolved(total);
-            profile.setEasySolved(easy);
-            profile.setMediumSolved(medium);
-            profile.setHardSolved(hard);
-            profile.setRating(1580 + (hash % 220));
-            profile.setRankName("Knight");
-            profile.setVerified(true);
-            try {
-                profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "C++", "Python")));
-            } catch (Exception ignored) {}
-            profile.setDsaScore(Math.min(92, Math.max(50, (int) (total * 0.45 + hard * 2))));
-            profile.setActivityScore(Math.min(88, (int) (total * 0.4 + 30)));
+        if (profile.getTotalSolved() == null) {
+            profile.setTotalSolved(0);
+            profile.setEasySolved(0);
+            profile.setMediumSolved(0);
+            profile.setHardSolved(0);
+            profile.setRating(0);
+            profile.setRankName("Pending Sync");
+            profile.setVerified(false);
+            profile.setDsaScore(0);
+            profile.setActivityScore(0);
         }
     }
 
     private void syncCodeChef(CodingProfile profile, String username) {
-        if (profile.getTotalSolved() == null || profile.getTotalSolved() == 0) {
-            int hash = Math.abs(username.toLowerCase().hashCode());
-            int rating = 1480 + (hash % 320);
-            profile.setRating(rating);
-            profile.setTotalSolved(65 + (hash % 45));
-            profile.setRankName(rating > 1600 ? "3 Star" : "2 Star");
-            profile.setVerified(true);
+        if (profile.getTotalSolved() == null) {
+            profile.setRating(0);
+            profile.setTotalSolved(0);
+            profile.setRankName("Unverified Handle");
+            profile.setVerified(false);
             try {
                 profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "C++")));
             } catch (Exception ignored) {}
-            profile.setDsaScore(Math.min(90, (int) (rating / 25)));
-            profile.setActivityScore(70);
+            profile.setDsaScore(0);
+            profile.setActivityScore(0);
         }
     }
 
     private void syncHackerRank(CodingProfile profile, String username) {
-        if (profile.getTotalSolved() == null || profile.getTotalSolved() == 0) {
-            int hash = Math.abs(username.toLowerCase().hashCode());
-            profile.setTotalSolved(50 + (hash % 30));
-            profile.setRankName("5 Star Java & Problem Solving");
-            profile.setVerified(true);
+        if (profile.getTotalSolved() == null) {
+            profile.setTotalSolved(0);
+            profile.setRankName("Unverified Handle");
+            profile.setVerified(false);
             try {
-                profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "SQL", "Problem Solving")));
+                profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "SQL")));
             } catch (Exception ignored) {}
-            profile.setDsaScore(75);
-            profile.setActivityScore(72);
+            profile.setDsaScore(0);
+            profile.setActivityScore(0);
         }
     }
 
     private void syncGeeksforGeeks(CodingProfile profile, String username) {
-        if (profile.getTotalSolved() == null || profile.getTotalSolved() == 0) {
-            int hash = Math.abs(username.toLowerCase().hashCode());
-            profile.setTotalSolved(80 + (hash % 40));
-            profile.setRankName("Active Problem Solver");
-            profile.setVerified(true);
+        if (profile.getTotalSolved() == null) {
+            profile.setTotalSolved(0);
+            profile.setRankName("Unverified Handle");
+            profile.setVerified(false);
             try {
-                profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "DSA", "Algorithms")));
+                profile.setTopLanguagesJson(objectMapper.writeValueAsString(List.of("Java", "DSA")));
             } catch (Exception ignored) {}
-            profile.setDsaScore(78);
-            profile.setActivityScore(75);
+            profile.setDsaScore(0);
+            profile.setActivityScore(0);
         }
     }
 

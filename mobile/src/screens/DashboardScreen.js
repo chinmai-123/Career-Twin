@@ -218,9 +218,9 @@ const DashboardScreen = ({ navigation }) => {
           iconBg={colors.secondaryLight}
           title="Coding Platforms"
           value={`${codingPlatforms} Connected`}
-          subtitle={`${verifiedSkills} Verified Skill${verifiedSkills === 1 ? '' : 's'}`}
-          badge={codingPlatforms > 0 ? 'Synced' : 'Connect'}
-          badgeColor={colors.secondary}
+          subtitle={codingPlatforms > 0 ? `${twinData?.codingScore ?? 0}% DSA Strength • ${verifiedSkills} Skills` : 'No Coding Platforms Linked'}
+          badge={codingPlatforms > 0 ? (twinData?.codingScore >= 70 ? 'Advanced' : 'Synced') : 'Link Handle'}
+          badgeColor={codingPlatforms > 0 ? colors.secondary : colors.textMuted}
           progress={twinData?.codingScore ?? 0}
           onPress={() => navigation.navigate('CodingProfiles')}
         />

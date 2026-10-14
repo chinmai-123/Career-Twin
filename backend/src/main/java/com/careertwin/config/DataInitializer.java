@@ -162,20 +162,7 @@ public class DataInitializer implements CommandLineRunner {
             goalRequest.setTargetTimeline("Campus Placement 2026");
             careerGoalService.saveOrUpdateCareerGoal(saved.getId(), goalRequest);
 
-            // Set Coding Profiles
-            CodingProfileRequest github = new CodingProfileRequest();
-            github.setPlatform("GITHUB");
-            github.setUsername("aarav-sharma-dev");
-            github.setProfileUrl("https://github.com/aarav-sharma-dev");
-            codingProfileService.addOrUpdateProfile(saved.getId(), github);
-
-            CodingProfileRequest leetcode = new CodingProfileRequest();
-            leetcode.setPlatform("LEETCODE");
-            leetcode.setUsername("aarav_codes");
-            leetcode.setProfileUrl("https://leetcode.com/aarav_codes");
-            codingProfileService.addOrUpdateProfile(saved.getId(), leetcode);
-
-            // Recalculate Career Twin
+            // Recalculate Career Twin (clean initial state for fresh student profile)
             careerTwinEngineService.recalculateCareerTwin(saved.getId());
 
             logger.info("Demo student seeded successfully. Credentials: {} / password123", demoEmail);
