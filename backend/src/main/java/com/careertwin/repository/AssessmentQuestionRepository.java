@@ -10,4 +10,6 @@ import java.util.List;
 public interface AssessmentQuestionRepository extends JpaRepository<AssessmentQuestion, Long> {
     List<AssessmentQuestion> findByCategory(String category);
     List<AssessmentQuestion> findByRoleCategory(String roleCategory);
+    List<AssessmentQuestion> findByDifficulty(String difficulty);
+    List<AssessmentQuestion> findByCategoryAndDifficulty(String category, String difficulty);
 }

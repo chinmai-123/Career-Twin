@@ -37,9 +37,13 @@ const AssessmentScreen = ({ navigation }) => {
   const [quizActive, setQuizActive] = useState(false);
   const timerRef = useRef(null);
 
+  // User Solving Level
+  const [userLevel, setUserLevel] = useState(null);
+
   // Coding Challenges State
   const [codingChallenges, setCodingChallenges] = useState([]);
   const [codingCategory, setCodingCategory] = useState('ALL');
+  const [codingDifficulty, setCodingDifficulty] = useState('ALL');
   const [codingLoading, setCodingLoading] = useState(false);
   const [activeChallenge, setActiveChallenge] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('java');
@@ -48,6 +52,19 @@ const AssessmentScreen = ({ navigation }) => {
   const [submittingCode, setSubmittingCode] = useState(false);
   const [executionResult, setExecutionResult] = useState(null);
   const [resultModalVisible, setResultModalVisible] = useState(false);
+
+  // Load User Solving Level
+  const fetchUserLevel = useCallback(async () => {
+    try {
+      const res = await assessmentApi.getUserLevel();
+      const payload = res?.data || res;
+      if (payload) {
+        setUserLevel(payload);
+      }
+    } catch (err) {
+      console.warn('Could not load user solving level:', err.message);
+    }
+  }, []);
 
   // Load MCQ Questions
   const fetchQuestions = useCallback(async (cat) => {
@@ -75,10 +92,10 @@ const AssessmentScreen = ({ navigation }) => {
   }, []);
 
   // Load Coding Challenges
-  const fetchCodingChallenges = useCallback(async (cat) => {
+  const fetchCodingChallenges = useCallback(async (cat, diff) => {
     try {
       setCodingLoading(true);
-      const res = await assessmentApi.getCodingChallenges(cat === 'ALL' ? '' : cat);
+      const res = await assessmentApi.getCodingChallenges(cat === 'ALL' ? '' : cat, diff === 'ALL' ? '' : diff);
       const payload = res?.data || res;
       if (Array.isArray(payload)) {
         setCodingChallenges(payload);
@@ -91,12 +108,16 @@ const AssessmentScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
+    fetchUserLevel();
+  }, [fetchUserLevel]);
+
+  useEffect(() => {
     if (activeTab === 'MCQ') {
       fetchQuestions(mcqCategory);
     } else {
-      fetchCodingChallenges(codingCategory);
+      fetchCodingChallenges(codingCategory, codingDifficulty);
     }
-  }, [activeTab, mcqCategory, codingCategory, fetchQuestions, fetchCodingChallenges]);
+  }, [activeTab, mcqCategory, codingCategory, codingDifficulty, fetchQuestions, fetchCodingChallenges]);
 
   // Timer countdown for MCQ
   useEffect(() => {
@@ -141,6 +162,7 @@ const AssessmentScreen = ({ navigation }) => {
       const payload = res?.data || res;
       await careerTwinApi.recalculate();
       setQuizActive(false);
+      fetchUserLevel();
 
       navigation.navigate('AssessmentResult', {
         result: payload,
@@ -200,6 +222,8 @@ const AssessmentScreen = ({ navigation }) => {
       setExecutionResult(payload);
       setResultModalVisible(true);
       await careerTwinApi.recalculate();
+      fetchUserLevel();
+      fetchCodingChallenges(codingCategory, codingDifficulty);
     } catch (err) {
       Alert.alert('Submit Error', err.message || 'Could not evaluate coding submission.');
     } finally {
@@ -263,6 +287,53 @@ const AssessmentScreen = ({ navigation }) => {
               Coding Challenges
             </Text>
           </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Adaptive User Solving Level Banner */}
+      {!activeChallenge && userLevel && (
+        <View style={styles.levelBanner}>
+          <View style={styles.levelHeaderRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+              <Ionicons name="trophy-outline" size={18} color="#60a5fa" style={{ marginRight: 6 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.levelTitleText}>{userLevel.levelTitle || 'Level 1: Foundational Coder'}</Text>
+                <Text style={styles.levelSubText}>Adaptive Difficulty & Placement Track</Text>
+              </View>
+            </View>
+
+            <View style={[styles.tierPill, {
+              backgroundColor: userLevel.currentLevel === 'ADVANCED' ? '#581c87' : userLevel.currentLevel === 'INTERMEDIATE' ? '#1e3a8a' : '#14532d'
+            }]}>
+              <Text style={styles.tierPillText}>{userLevel.currentLevel || 'BEGINNER'}</Text>
+            </View>
+          </View>
+
+          {/* Stats Row */}
+          <View style={styles.levelStatsGrid}>
+            <View style={styles.statCol}>
+              <Text style={styles.statVal}>{userLevel.solveRatePercentage || 0}%</Text>
+              <Text style={styles.statLbl}>Solve Rate</Text>
+            </View>
+            <View style={styles.statCol}>
+              <Text style={styles.statVal}>{userLevel.totalSolved || 0}/{userLevel.totalAttempted || 0}</Text>
+              <Text style={styles.statLbl}>Solved</Text>
+            </View>
+            <View style={styles.statCol}>
+              <Text style={[styles.statVal, { color: '#a78bfa' }]}>{userLevel.recommendedDifficulty || 'EASY'}</Text>
+              <Text style={styles.statLbl}>Target Tier</Text>
+            </View>
+            <View style={styles.statCol}>
+              <Text style={styles.statVal}>{userLevel.easySolvedCount || 0}E • {userLevel.mediumSolvedCount || 0}M • {userLevel.hardSolvedCount || 0}H</Text>
+              <Text style={styles.statLbl}>Tiers</Text>
+            </View>
+          </View>
+
+          {userLevel.nextTierDescription && (
+            <Text style={styles.levelNextDesc}>
+              🎯 {userLevel.nextTierDescription}
+            </Text>
+          )}
         </View>
       )}
 
@@ -408,7 +479,7 @@ const AssessmentScreen = ({ navigation }) => {
       {activeTab === 'CODING' && !activeChallenge && (
         <ScrollView contentContainerStyle={styles.content}>
           {/* Coding Category Filter Chips */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
             {CODING_CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat}
@@ -422,11 +493,40 @@ const AssessmentScreen = ({ navigation }) => {
             ))}
           </ScrollView>
 
+          {/* Difficulty Tier Chips */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginRight: 8 }}>
+              Tier:
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {['ALL', 'EASY', 'MEDIUM', 'HARD'].map((diff) => {
+                const isSel = codingDifficulty === diff;
+                const isRec = userLevel?.recommendedDifficulty === diff;
+                return (
+                  <TouchableOpacity
+                    key={diff}
+                    style={[
+                      styles.diffFilterChip,
+                      isSel && styles.diffFilterChipActive,
+                      isRec && !isSel && { borderColor: '#7c3aed', borderWidth: 1 }
+                    ]}
+                    onPress={() => setCodingDifficulty(diff)}
+                  >
+                    <Text style={[styles.diffFilterText, isSel && styles.diffFilterTextActive]}>
+                      {diff} {isRec ? '🎯' : ''}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
           {codingLoading ? (
             <LoadingSpinner message="Loading coding challenges..." />
           ) : codingChallenges.length > 0 ? (
             codingChallenges.map((challenge) => {
               const isEasy = challenge.difficulty === 'EASY';
+              const isMedium = challenge.difficulty === 'MEDIUM';
               return (
                 <View key={challenge.id} style={styles.challengeCard}>
                   <View style={styles.challengeHeader}>
@@ -436,11 +536,41 @@ const AssessmentScreen = ({ navigation }) => {
                         Target Role: {challenge.roleCategory || 'Software Engineer'}
                       </Text>
                     </View>
-                    <View style={[styles.diffBadge, { backgroundColor: isEasy ? colors.successLight : colors.warningLight }]}>
-                      <Text style={[styles.diffText, { color: isEasy ? colors.successDark : colors.warningDark }]}>
+                    <View style={[
+                      styles.diffBadge,
+                      {
+                        backgroundColor:
+                          isEasy ? colors.successLight :
+                          isMedium ? colors.warningLight : '#fce7f3'
+                      }
+                    ]}>
+                      <Text style={[
+                        styles.diffText,
+                        {
+                          color:
+                            isEasy ? colors.successDark :
+                            isMedium ? colors.warningDark : '#be185d'
+                        }
+                      ]}>
                         {challenge.difficulty}
                       </Text>
                     </View>
+                  </View>
+
+                  {/* Solved / Recommended Badges */}
+                  <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                    {challenge.solved && (
+                      <View style={styles.solvedBadge}>
+                        <Text style={styles.solvedBadgeText}>
+                          ✓ Solved {challenge.bestScore ? `(${Math.round(challenge.bestScore)}%)` : ''}
+                        </Text>
+                      </View>
+                    )}
+                    {challenge.recommended && !challenge.solved && (
+                      <View style={styles.recBadge}>
+                        <Text style={styles.recBadgeText}>🎯 Recommended</Text>
+                      </View>
+                    )}
                   </View>
 
                   <Text style={styles.challengeDesc} numberOfLines={3}>
@@ -1232,6 +1362,116 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '700',
+  },
+  levelBanner: {
+    backgroundColor: '#0f172a',
+    borderRadius: 14,
+    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  levelHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  levelTitleText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  levelSubText: {
+    fontSize: 10,
+    color: '#94a3b8',
+    marginTop: 1,
+  },
+  tierPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  tierPillText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  levelStatsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  statCol: {
+    alignItems: 'center',
+  },
+  statVal: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#38bdf8',
+  },
+  statLbl: {
+    fontSize: 9,
+    color: '#94a3b8',
+    marginTop: 1,
+  },
+  levelNextDesc: {
+    fontSize: 10,
+    color: '#cbd5e1',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    padding: 6,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  diffFilterChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceSecondary,
+    marginRight: 6,
+  },
+  diffFilterChipActive: {
+    backgroundColor: colors.primary,
+  },
+  diffFilterText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  diffFilterTextActive: {
+    color: '#ffffff',
+  },
+  solvedBadge: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#86efac',
+  },
+  solvedBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#166534',
+  },
+  recBadge: {
+    backgroundColor: '#ede9fe',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ddd6fe',
+  },
+  recBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#6d28d9',
   },
 });
 

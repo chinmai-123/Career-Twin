@@ -13,6 +13,7 @@ public class AssessmentResultDto {
     private Double scorePercentage;
     private Boolean passed;
     private Integer timeTakenSeconds;
+    private String challengeId;
     private List<QuestionReviewDto> reviewList;
     private LocalDateTime completedAt;
 
@@ -177,6 +178,14 @@ public class AssessmentResultDto {
 
     public void setTimeTakenSeconds(Integer timeTakenSeconds) {
         this.timeTakenSeconds = timeTakenSeconds;
+    }
+
+    public String getChallengeId() {
+        return challengeId;
+    }
+
+    public void setChallengeId(String challengeId) {
+        this.challengeId = challengeId;
     }
 
     public List<QuestionReviewDto> getReviewList() {

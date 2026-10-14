@@ -49,6 +49,8 @@ const SkillVerificationPage = () => {
   // Coding State
   const [codingChallenges, setCodingChallenges] = useState([]);
   const [selectedCodingCat, setSelectedCodingCat] = useState('ALL');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('ALL');
+  const [userLevel, setUserLevel] = useState(null);
   const [activeChallenge, setActiveChallenge] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('java');
   const [userCode, setUserCode] = useState('');
@@ -59,7 +61,7 @@ const SkillVerificationPage = () => {
 
   const navigate = useNavigate();
 
-  // Load Goal & Coding Challenges
+  // Load Goal, User Level & Coding Challenges
   useEffect(() => {
     careerGoalApi.getGoal().then(res => {
       if (res.data?.targetRole) {
@@ -67,16 +69,30 @@ const SkillVerificationPage = () => {
       }
     }).catch(() => {});
 
-    loadCodingChallenges('ALL');
+    loadUserLevel();
+    loadCodingChallenges('ALL', 'ALL');
   }, []);
 
-  const loadCodingChallenges = async (cat) => {
+  const loadUserLevel = async () => {
+    try {
+      const res = await assessmentApi.getUserLevel();
+      setUserLevel(res.data);
+    } catch (err) {
+      console.warn('Failed to load user solving level:', err);
+    }
+  };
+
+  const loadCodingChallenges = async (cat = selectedCodingCat, diff = selectedDifficulty) => {
     setCodingLoading(true);
     try {
-      const res = await assessmentApi.getCodingChallenges(cat === 'ALL' ? '' : cat);
-      setCodingChallenges(res.data || []);
-      if (res.data && res.data.length > 0 && !activeChallenge) {
-        selectChallenge(res.data[0]);
+      const res = await assessmentApi.getCodingChallenges(cat === 'ALL' ? '' : cat, diff === 'ALL' ? '' : diff);
+      const data = res.data || [];
+      setCodingChallenges(data);
+      if (data.length > 0) {
+        const stillPresent = data.find(c => c.id === activeChallenge?.id);
+        selectChallenge(stillPresent || data[0]);
+      } else {
+        setActiveChallenge(null);
       }
     } catch (err) {
       console.error('Failed to load coding challenges:', err);
@@ -130,7 +146,9 @@ const SkillVerificationPage = () => {
       });
       setExecutionResult(res.data);
       await careerTwinApi.recalculate();
-      alert(`Submission ${res.data.passed ? 'PASSED! 🎉' : 'Needs Work'} Score: ${Math.round(res.data.scorePercentage)}%. Career Twin verified skills updated!`);
+      await loadUserLevel();
+      loadCodingChallenges(selectedCodingCat, selectedDifficulty);
+      alert(`Submission ${res.data.passed ? 'PASSED! 🎉' : 'Needs Work'} Score: ${Math.round(res.data.scorePercentage)}%. Career Twin verified skills & solving level updated!`);
     } catch (err) {
       alert('Error submitting code: ' + (err.message || 'Submission failed'));
     } finally {
@@ -444,6 +462,97 @@ const SkillVerificationPage = () => {
         </div>
       </div>
 
+      {/* Adaptive Solving Level Progression Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        borderRadius: '12px',
+        padding: '18px 22px',
+        marginBottom: '20px',
+        color: '#ffffff',
+        border: '1px solid #334155',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Award size={24} color="#60a5fa" />
+            <div>
+              <div style={{ fontSize: '1.05rem', fontWeight: '800', letterSpacing: '-0.01em' }}>
+                {userLevel?.levelTitle || 'Level 1: Foundational Coder'}
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
+                Adaptive Engine • Solved questions calibrate upcoming challenge difficulty
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{
+              background: userLevel?.currentLevel === 'ADVANCED' ? '#581c87' : userLevel?.currentLevel === 'INTERMEDIATE' ? '#1e3a8a' : '#14532d',
+              color: userLevel?.currentLevel === 'ADVANCED' ? '#e9d5ff' : userLevel?.currentLevel === 'INTERMEDIATE' ? '#bfdbfe' : '#bbf7d0',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontWeight: '700',
+              fontSize: '0.78rem',
+              border: '1px solid rgba(255,255,255,0.15)'
+            }}>
+              Tier: {userLevel?.currentLevel || 'BEGINNER'}
+            </span>
+
+            <span style={{
+              background: '#4338ca',
+              color: '#ffffff',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontWeight: '700',
+              fontSize: '0.78rem'
+            }}>
+              🎯 Recommended: {userLevel?.recommendedDifficulty || 'EASY'}
+            </span>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: '12px',
+          paddingTop: '12px',
+          borderTop: '1px solid #334155',
+          fontSize: '0.82rem'
+        }}>
+          <div>
+            <span style={{ color: '#94a3b8' }}>Solve Rate:</span>{' '}
+            <strong style={{ color: '#38bdf8' }}>{userLevel?.solveRatePercentage || 0}%</strong>
+          </div>
+          <div>
+            <span style={{ color: '#94a3b8' }}>Avg Score:</span>{' '}
+            <strong style={{ color: '#4ade80' }}>{userLevel?.averageScorePercentage || 0}%</strong>
+          </div>
+          <div>
+            <span style={{ color: '#94a3b8' }}>Solved Total:</span>{' '}
+            <strong style={{ color: '#facc15' }}>{userLevel?.totalSolved || 0} / {userLevel?.totalAttempted || 0}</strong>
+          </div>
+          <div>
+            <span style={{ color: '#94a3b8' }}>Solved Tiers:</span>{' '}
+            <strong style={{ color: '#cbd5e1' }}>
+              {userLevel?.easySolvedCount || 0}E • {userLevel?.mediumSolvedCount || 0}M • {userLevel?.hardSolvedCount || 0}H
+            </strong>
+          </div>
+        </div>
+
+        {/* Next Tier Progression Notice */}
+        <div style={{
+          marginTop: '12px',
+          fontSize: '0.8rem',
+          color: '#cbd5e1',
+          background: 'rgba(255,255,255,0.06)',
+          padding: '8px 12px',
+          borderRadius: '6px'
+        }}>
+          💡 <strong>Progression Target:</strong> {userLevel?.nextTierDescription || 'Complete challenges to unlock higher difficulty tiers.'}
+        </div>
+      </div>
+
       {/* Target Role Guidance Banner */}
       <div style={{
         background: '#eff6ff',
@@ -529,7 +638,7 @@ const SkillVerificationPage = () => {
               <li style={{ display: 'flex', gap: '10px' }}>
                 <Award size={18} color="#10b981" style={{ flexShrink: 0 }} />
                 <div>
-                  <strong>Format:</strong> 10 Multiple Choice Questions randomly drawn from the verified question bank.
+                  <strong>Format:</strong> 10 Multiple Choice Questions dynamically adapted to your solving tier ({userLevel?.recommendedDifficulty || 'EASY'}).
                 </div>
               </li>
               <li style={{ display: 'flex', gap: '10px' }}>
@@ -541,7 +650,7 @@ const SkillVerificationPage = () => {
               <li style={{ display: 'flex', gap: '10px' }}>
                 <AlertCircle size={18} color="#64748b" style={{ flexShrink: 0 }} />
                 <div>
-                  <strong>Integrity Tracking:</strong> Answers are evaluated with automated explanations and recalibration upon submission.
+                  <strong>Adaptive Progression:</strong> Higher scores automatically unlock tougher questions and MNC-level challenges.
                 </div>
               </li>
             </ul>
@@ -566,24 +675,78 @@ const SkillVerificationPage = () => {
       {/* ==================================================== */}
       {activeTab === 'CODING' && (
         <div>
-          {/* Coding Category Filter Buttons */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            {codingCategories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => {
-                  setSelectedCodingCat(cat);
-                  loadCodingChallenges(cat);
-                }}
-                className={`btn ${selectedCodingCat === cat ? 'btn-primary' : 'btn-outline'}`}
-                style={{ padding: '6px 14px', fontSize: '0.82rem' }}
-              >
-                {cat}
-              </button>
-            ))}
+          {/* Coding Filters: Categories + Difficulty Tiers */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            {/* Category Buttons */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {codingCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setSelectedCodingCat(cat);
+                    loadCodingChallenges(cat, selectedDifficulty);
+                  }}
+                  className={`btn ${selectedCodingCat === cat ? 'btn-primary' : 'btn-outline'}`}
+                  style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Difficulty Filter Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: '4px',
+              alignItems: 'center',
+              background: '#f1f5f9',
+              padding: '4px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1'
+            }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: '700', color: '#64748b', padding: '0 6px' }}>
+                Tier:
+              </span>
+              {['ALL', 'EASY', 'MEDIUM', 'HARD'].map((diff) => {
+                const isSelected = selectedDifficulty === diff;
+                const isRec = userLevel?.recommendedDifficulty === diff;
+                return (
+                  <button
+                    key={diff}
+                    onClick={() => {
+                      setSelectedDifficulty(diff);
+                      loadCodingChallenges(selectedCodingCat, diff);
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: isSelected ? '#2563eb' : 'transparent',
+                      color: isSelected ? '#ffffff' : isRec ? '#4338ca' : '#475569',
+                      fontWeight: isSelected || isRec ? '700' : '500',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {diff}
+                    {isRec && <span title="Recommended based on your solve rate">🎯</span>}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '20px' }}>
             {/* Left: Challenge Selector List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {codingLoading ? (
@@ -594,6 +757,8 @@ const SkillVerificationPage = () => {
                 codingChallenges.map((c) => {
                   const isSelected = activeChallenge?.id === c.id;
                   const isEasy = c.difficulty === 'EASY';
+                  const isMedium = c.difficulty === 'MEDIUM';
+                  const isHard = c.difficulty === 'HARD';
                   return (
                     <div
                       key={c.id}
@@ -602,35 +767,66 @@ const SkillVerificationPage = () => {
                       style={{
                         padding: '14px',
                         cursor: 'pointer',
-                        border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                        background: isSelected ? '#eff6ff' : '#ffffff',
+                        border: isSelected ? '2px solid #2563eb' : c.solved ? '1px solid #86efac' : '1px solid #e2e8f0',
+                        background: isSelected ? '#eff6ff' : c.solved ? '#f0fdf4' : '#ffffff',
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
                         <strong style={{ fontSize: '0.92rem', color: isSelected ? '#1e40af' : '#1e293b' }}>
                           {c.title}
                         </strong>
                         <span style={{
-                          fontSize: '0.72rem',
+                          fontSize: '0.7rem',
                           fontWeight: '700',
                           padding: '2px 8px',
                           borderRadius: '6px',
-                          background: isEasy ? '#dcfce7' : '#fef3c7',
-                          color: isEasy ? '#15803d' : '#b45309'
+                          background: isEasy ? '#dcfce7' : isMedium ? '#fef3c7' : '#fce7f3',
+                          color: isEasy ? '#15803d' : isMedium ? '#b45309' : '#be185d'
                         }}>
                           {c.difficulty}
                         </span>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
-                        {c.category} &bull; {c.roleCategory}
+
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {c.solved && (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: '#dcfce7',
+                            color: '#166534',
+                            border: '1px solid #86efac'
+                          }}>
+                            ✓ Solved {c.bestScore ? `(${Math.round(c.bestScore)}%)` : ''}
+                          </span>
+                        )}
+
+                        {c.recommended && !c.solved && (
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: '#ede9fe',
+                            color: '#6d28d9',
+                            border: '1px solid #ddd6fe'
+                          }}>
+                            🎯 Recommended
+                          </span>
+                        )}
+
+                        <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
+                          {c.category} &bull; {c.roleCategory}
+                        </span>
                       </div>
                     </div>
                   );
                 })
               ) : (
                 <div className="card" style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
-                  No challenges in this category.
+                  No challenges matching selected filters.
                 </div>
               )}
             </div>

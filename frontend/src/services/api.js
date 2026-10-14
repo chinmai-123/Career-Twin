@@ -99,11 +99,24 @@ export const codingProfileApi = {
 };
 
 export const assessmentApi = {
-  getQuestions: (category = 'ALL') => api.get(`/assessment/questions?category=${category}`),
+  getQuestions: (category = 'ALL', difficulty) => {
+    const params = new URLSearchParams();
+    if (category && category !== 'ALL') params.append('category', category);
+    if (difficulty && difficulty !== 'ALL') params.append('difficulty', difficulty);
+    const qs = params.toString();
+    return api.get(`/assessment/questions${qs ? `?${qs}` : ''}`);
+  },
+  getUserLevel: () => api.get('/assessment/user-level'),
   submitAssessment: (data) => api.post('/assessment/submit', data),
   getResults: () => api.get('/assessment/results'),
   getLatest: () => api.get('/assessment/latest'),
-  getCodingChallenges: (category) => api.get(`/assessment/coding-challenges${category ? `?category=${category}` : ''}`),
+  getCodingChallenges: (category, difficulty) => {
+    const params = new URLSearchParams();
+    if (category && category !== 'ALL') params.append('category', category);
+    if (difficulty && difficulty !== 'ALL') params.append('difficulty', difficulty);
+    const qs = params.toString();
+    return api.get(`/assessment/coding-challenges${qs ? `?${qs}` : ''}`);
+  },
   runCoding: (data) => api.post('/assessment/coding-run', data),
   submitCoding: (data) => api.post('/assessment/coding-submit', data),
 };

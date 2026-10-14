@@ -15,6 +15,10 @@ public class CodingChallengeDto {
     private String sampleOutput;
     private Map<String, String> starterCode; // language -> template code
     private List<TestCaseDto> visibleTestCases;
+    private boolean solved;
+    private Double bestScore;
+    private boolean recommended;
+    private String unlockStatus = "UNLOCKED"; // "COMPLETED", "RECOMMENDED", "UNLOCKED", "LOCKED_PREVIEW"
 
     public CodingChallengeDto() {
     }
@@ -144,5 +148,37 @@ public class CodingChallengeDto {
 
     public void setVisibleTestCases(List<TestCaseDto> visibleTestCases) {
         this.visibleTestCases = visibleTestCases;
+    }
+
+    public boolean isSolved() {
+        return solved;
+    }
+
+    public void setSolved(boolean solved) {
+        this.solved = solved;
+    }
+
+    public Double getBestScore() {
+        return bestScore;
+    }
+
+    public void setBestScore(Double bestScore) {
+        this.bestScore = bestScore;
+    }
+
+    public boolean isRecommended() {
+        return recommended;
+    }
+
+    public void setRecommended(boolean recommended) {
+        this.recommended = recommended;
+    }
+
+    public String getUnlockStatus() {
+        return unlockStatus;
+    }
+
+    public void setUnlockStatus(String unlockStatus) {
+        this.unlockStatus = unlockStatus;
     }
 }

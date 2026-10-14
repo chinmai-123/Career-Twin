@@ -30,6 +30,9 @@ public class AssessmentResult {
     @Column(columnDefinition = "TEXT")
     private String detailedAnswersJson; // JSON of user's selected answers, correctness, explanations
 
+    @Column(length = 100)
+    private String challengeId; // e.g. "two-sum", "lru-cache" for coding submissions
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime completedAt;
 
@@ -120,6 +123,14 @@ public class AssessmentResult {
 
     public void setDetailedAnswersJson(String detailedAnswersJson) {
         this.detailedAnswersJson = detailedAnswersJson;
+    }
+
+    public String getChallengeId() {
+        return challengeId;
+    }
+
+    public void setChallengeId(String challengeId) {
+        this.challengeId = challengeId;
     }
 
     public LocalDateTime getCompletedAt() {

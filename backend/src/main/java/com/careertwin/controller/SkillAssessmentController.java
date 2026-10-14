@@ -20,9 +20,20 @@ public class SkillAssessmentController {
 
     @GetMapping("/questions")
     public ResponseEntity<ApiResponse<List<AssessmentQuestionDto>>> getQuestions(
-            @RequestParam(defaultValue = "ALL") String category) {
-        List<AssessmentQuestionDto> questions = assessmentService.getQuestionsForAssessment(category);
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(defaultValue = "ALL") String category,
+            @RequestParam(required = false) String difficulty) {
+        Long userId = principal != null ? principal.getId() : null;
+        List<AssessmentQuestionDto> questions = assessmentService.getQuestionsForAssessment(category, userId, difficulty);
         return ResponseEntity.ok(ApiResponse.ok("Assessment questions retrieved", questions));
+    }
+
+    @GetMapping("/user-level")
+    public ResponseEntity<ApiResponse<UserSolvingLevelDto>> getUserSolvingLevel(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        Long userId = principal != null ? principal.getId() : null;
+        UserSolvingLevelDto level = assessmentService.getUserSolvingLevel(userId);
+        return ResponseEntity.ok(ApiResponse.ok("User solving level and adaptive progression retrieved", level));
     }
 
     @PostMapping("/submit")
@@ -50,8 +61,10 @@ public class SkillAssessmentController {
     @GetMapping("/coding-challenges")
     public ResponseEntity<ApiResponse<List<CodingChallengeDto>>> getCodingChallenges(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam(required = false) String category) {
-        List<CodingChallengeDto> challenges = assessmentService.getCodingChallenges(category, principal != null ? principal.getId() : null);
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String difficulty) {
+        List<CodingChallengeDto> challenges = assessmentService.getCodingChallenges(
+                category, principal != null ? principal.getId() : null, difficulty);
         return ResponseEntity.ok(ApiResponse.ok("Coding challenges retrieved", challenges));
     }
 
