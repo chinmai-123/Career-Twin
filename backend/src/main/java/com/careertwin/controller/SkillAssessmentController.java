@@ -46,4 +46,27 @@ public class SkillAssessmentController {
         AssessmentResultDto result = assessmentService.getLatestAssessmentResult(principal.getId());
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
+
+    @GetMapping("/coding-challenges")
+    public ResponseEntity<ApiResponse<List<CodingChallengeDto>>> getCodingChallenges(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) String category) {
+        List<CodingChallengeDto> challenges = assessmentService.getCodingChallenges(category, principal != null ? principal.getId() : null);
+        return ResponseEntity.ok(ApiResponse.ok("Coding challenges retrieved", challenges));
+    }
+
+    @PostMapping("/coding-run")
+    public ResponseEntity<ApiResponse<CodingExecutionResultDto>> runCodingChallenge(
+            @Valid @RequestBody CodingSubmissionRequest request) {
+        CodingExecutionResultDto result = assessmentService.evaluateCode(request.getChallengeId(), request.getLanguage(), request.getCode(), false);
+        return ResponseEntity.ok(ApiResponse.ok("Test cases executed", result));
+    }
+
+    @PostMapping("/coding-submit")
+    public ResponseEntity<ApiResponse<CodingExecutionResultDto>> submitCodingChallenge(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody CodingSubmissionRequest request) {
+        CodingExecutionResultDto result = assessmentService.submitCodingChallenge(principal.getId(), request);
+        return ResponseEntity.ok(ApiResponse.ok("Coding assessment evaluated and Career Twin updated", result));
+    }
 }

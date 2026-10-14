@@ -103,6 +103,9 @@ export const assessmentApi = {
   submitAssessment: (data) => api.post('/assessment/submit', data),
   getResults: () => api.get('/assessment/results'),
   getLatest: () => api.get('/assessment/latest'),
+  getCodingChallenges: (category) => api.get(`/assessment/coding-challenges${category ? `?category=${category}` : ''}`),
+  runCoding: (data) => api.post('/assessment/coding-run', data),
+  submitCoding: (data) => api.post('/assessment/coding-submit', data),
 };
 
 export const careerTwinApi = {

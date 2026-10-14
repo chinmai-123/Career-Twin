@@ -94,4 +94,13 @@ public class AssessmentQuestionDto {
     public void setDifficulty(String difficulty) {
         this.difficulty = difficulty;
     }
+
+    public java.util.List<String> getOptions() {
+        java.util.List<String> list = new java.util.ArrayList<>();
+        if (optionA != null) list.add(optionA);
+        if (optionB != null) list.add(optionB);
+        if (optionC != null) list.add(optionC);
+        if (optionD != null) list.add(optionD);
+        return list;
+    }
 }
