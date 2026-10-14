@@ -5,7 +5,7 @@ const STORAGE_KEY = '@careertwin_api_base_url';
 
 // Default presets
 export const PRESETS = {
-  PHYSICAL_DEVICE: 'http://192.168.1.23:8085/api',
+  PHYSICAL_DEVICE: 'http://192.168.1.13:8085/api',
   ANDROID_EMULATOR: 'http://10.0.2.2:8085/api',
   LOCALHOST: 'http://localhost:8085/api',
 };
@@ -13,7 +13,6 @@ export const PRESETS = {
 // Default fallback depending on environment
 const getDefaultBaseUrl = () => {
   if (Platform.OS === 'android') {
-    // When running on Android device / Expo Go, physical IP is most reliable
     return PRESETS.PHYSICAL_DEVICE;
   }
   return PRESETS.LOCALHOST;
@@ -26,6 +25,27 @@ export const initBaseUrl = async () => {
     const saved = await storage.getItem(STORAGE_KEY);
     if (saved && saved.trim()) {
       currentBaseUrl = saved.trim();
+      return currentBaseUrl;
+    }
+
+    // Auto-detect environment if no manual override is saved
+    if (Platform.OS === 'android') {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1000);
+        const res = await fetch('http://10.0.2.2:8085/api/auth/demo-credentials', {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          // Detected running inside Android Studio / AVD Emulator
+          currentBaseUrl = PRESETS.ANDROID_EMULATOR;
+          return currentBaseUrl;
+        }
+      } catch (e) {
+        // Not on emulator or 10.0.2.2 timed out -> use physical LAN IP
+        currentBaseUrl = PRESETS.PHYSICAL_DEVICE;
+      }
     }
   } catch (err) {
     // Silent fallback

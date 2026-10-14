@@ -61,10 +61,20 @@ const RegisterScreen = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        {/* Header Row */}
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.serverConfigBtn}
+            onPress={() => navigation.navigate('ServerConfig')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="settings-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.serverConfigText}>Server IP</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.title}>Create Student Account</Text>
         <Text style={styles.subtitle}>Join CareerTwin to track your placement readiness</Text>
@@ -185,8 +195,13 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: Platform.OS === 'android' ? 40 : 24,
   },
-  backBtn: {
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
+  },
+  backBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,
@@ -195,6 +210,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.borderLight,
+  },
+  serverConfigBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    elevation: 2,
+  },
+  serverConfigText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '600',
+    marginLeft: 4,
   },
   title: {
     fontSize: 26,
