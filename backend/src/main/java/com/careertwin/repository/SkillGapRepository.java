@@ -11,6 +11,7 @@ import java.util.List;
 public interface SkillGapRepository extends JpaRepository<SkillGap, Long> {
     List<SkillGap> findByUserOrderByGapScoreDesc(User user);
     List<SkillGap> findByUserIdOrderByGapScoreDesc(Long userId);
+    List<SkillGap> findByUserId(Long userId);
     void deleteByUser(User user);
     void deleteByUserId(Long userId);
 }

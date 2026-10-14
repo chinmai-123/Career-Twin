@@ -27,6 +27,45 @@ const ProfileScreen = ({ navigation }) => {
   });
   const [saving, setSaving] = useState(false);
 
+  // Sync profile data on mount and whenever user changes
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchLatestProfile = async () => {
+      try {
+        const res = await profileApi.getProfile();
+        const payload = res?.data || res;
+        if (payload && isMounted) {
+          updateUser(payload);
+          setFormData({
+            fullName: payload.fullName || '',
+            college: payload.college || '',
+            branch: payload.branch || '',
+            year: payload.year || '3rd Year',
+            graduationYear: (payload.graduationYear || 2026).toString(),
+          });
+        }
+      } catch (e) {
+        // Fall back to context user
+      }
+    };
+    fetchLatestProfile();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Update formData when user context changes
+  React.useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user.fullName || prev.fullName,
+        college: user.college || prev.college,
+        branch: user.branch || prev.branch,
+        year: user.year || prev.year || '3rd Year',
+        graduationYear: (user.graduationYear || prev.graduationYear || 2026).toString(),
+      }));
+    }
+  }, [user]);
+
   // Change Password state
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -38,6 +77,7 @@ const ProfileScreen = ({ navigation }) => {
       setSaving(true);
       const res = await profileApi.updateProfile({
         ...formData,
+        year: formData.year || '3rd Year',
         graduationYear: parseInt(formData.graduationYear, 10) || 2026,
       });
       const payload = res?.data || res;
@@ -143,6 +183,33 @@ const ProfileScreen = ({ navigation }) => {
                 value={formData.branch}
                 onChangeText={(t) => setFormData((p) => ({ ...p, branch: t }))}
               />
+
+              <Text style={styles.fieldLabel}>Year of Study</Text>
+              <View style={styles.yearChipRow}>
+                {['1st Year', '2nd Year', '3rd Year', '4th Year'].map((yr) => {
+                  const isSelected = formData.year === yr;
+                  return (
+                    <TouchableOpacity
+                      key={yr}
+                      style={[
+                        styles.yearChip,
+                        isSelected ? styles.yearChipActive : styles.yearChipInactive,
+                      ]}
+                      onPress={() => setFormData((p) => ({ ...p, year: yr }))}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.yearChipText,
+                          isSelected ? styles.yearChipTextActive : styles.yearChipTextInactive,
+                        ]}
+                      >
+                        {yr}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
               <Text style={styles.fieldLabel}>Graduation Year</Text>
               <TextInput
@@ -381,6 +448,39 @@ const styles = StyleSheet.create({
     height: 44,
     fontSize: 13,
     color: colors.text,
+  },
+  yearChipRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 6,
+    marginVertical: 4,
+  },
+  yearChip: {
+    flex: 1,
+    paddingVertical: 9,
+    paddingHorizontal: 2,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  yearChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  yearChipInactive: {
+    backgroundColor: colors.surfaceSecondary,
+    borderColor: colors.border,
+  },
+  yearChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  yearChipTextActive: {
+    color: '#ffffff',
+  },
+  yearChipTextInactive: {
+    color: colors.textSecondary,
   },
   saveBtn: {
     backgroundColor: colors.primary,

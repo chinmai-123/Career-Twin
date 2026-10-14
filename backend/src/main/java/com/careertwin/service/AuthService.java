@@ -49,7 +49,8 @@ public class AuthService {
         User savedUser = userRepository.save(user);
 
         String token = tokenProvider.generateToken(savedUser.getId(), savedUser.getEmail());
-        return new AuthResponse(token, savedUser.getId(), savedUser.getEmail(), savedUser.getFullName(), savedUser.getRole());
+        return new AuthResponse(token, savedUser.getId(), savedUser.getEmail(), savedUser.getFullName(), savedUser.getRole(),
+                savedUser.getCollege(), savedUser.getBranch(), savedUser.getYear(), savedUser.getGraduationYear(), savedUser.getPhone());
     }
 
     public AuthResponse login(AuthRequest request) {
@@ -64,7 +65,8 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String token = tokenProvider.generateToken(authentication);
-        return new AuthResponse(token, user.getId(), user.getEmail(), user.getFullName(), user.getRole());
+        return new AuthResponse(token, user.getId(), user.getEmail(), user.getFullName(), user.getRole(),
+                user.getCollege(), user.getBranch(), user.getYear(), user.getGraduationYear(), user.getPhone());
     }
 
     public UserProfileDto getProfile(Long userId) {

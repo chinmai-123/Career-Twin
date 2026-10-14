@@ -42,6 +42,13 @@ public class RoadmapController {
         return ResponseEntity.ok(ApiResponse.ok(projects));
     }
 
+    @PostMapping("/projects/regenerate")
+    public ResponseEntity<ApiResponse<List<ProjectRecommendationDto>>> regenerateProjects(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<ProjectRecommendationDto> projects = roadmapService.regeneratePersonalizedProjects(principal.getId());
+        return ResponseEntity.ok(ApiResponse.ok("Personalized projects regenerated based on your academic year and skill gaps", projects));
+    }
+
     @PatchMapping("/projects/{projectId}/status")
     public ResponseEntity<ApiResponse<ProjectRecommendationDto>> updateProjectStatus(
             @AuthenticationPrincipal UserPrincipal principal,

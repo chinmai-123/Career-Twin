@@ -49,18 +49,32 @@ export const AuthProvider = ({ children }) => {
     const payload = res?.data || res;
     if (payload?.token) {
       const authToken = payload.token;
-      const authUser = {
-        id: payload.userId,
+      let authUser = {
+        id: payload.id || payload.userId,
         email: payload.email,
         fullName: payload.fullName,
         college: payload.college,
         branch: payload.branch,
+        year: payload.year || '3rd Year',
         graduationYear: payload.graduationYear,
-        roles: payload.roles,
+        phone: payload.phone,
+        role: payload.role || payload.roles,
       };
       await storage.setItem(TOKEN_KEY, authToken);
-      await storage.setItem(USER_KEY, JSON.stringify(authUser));
       setToken(authToken);
+      
+      // Also fetch full profile from backend to ensure all fields are synchronized
+      try {
+        const pRes = await profileApi.getProfile();
+        const pData = pRes?.data || pRes;
+        if (pData) {
+          authUser = { ...authUser, ...pData };
+        }
+      } catch (e) {
+        // Fallback to payload data
+      }
+
+      await storage.setItem(USER_KEY, JSON.stringify(authUser));
       setUser(authUser);
       return authUser;
     }
@@ -72,18 +86,29 @@ export const AuthProvider = ({ children }) => {
     const payload = res?.data || res;
     if (payload?.token) {
       const authToken = payload.token;
-      const authUser = {
-        id: payload.userId,
+      let authUser = {
+        id: payload.id || payload.userId,
         email: payload.email,
         fullName: payload.fullName,
         college: payload.college,
         branch: payload.branch,
+        year: payload.year || userData.year || '3rd Year',
         graduationYear: payload.graduationYear,
-        roles: payload.roles,
+        phone: payload.phone || userData.phone,
+        role: payload.role || payload.roles,
       };
       await storage.setItem(TOKEN_KEY, authToken);
-      await storage.setItem(USER_KEY, JSON.stringify(authUser));
       setToken(authToken);
+
+      try {
+        const pRes = await profileApi.getProfile();
+        const pData = pRes?.data || pRes;
+        if (pData) {
+          authUser = { ...authUser, ...pData };
+        }
+      } catch (e) {}
+
+      await storage.setItem(USER_KEY, JSON.stringify(authUser));
       setUser(authUser);
       return authUser;
     }

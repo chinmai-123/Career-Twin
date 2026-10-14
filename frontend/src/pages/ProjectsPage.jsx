@@ -38,17 +38,45 @@ const ProjectsPage = () => {
     }
   };
 
+  const [regenerating, setRegenerating] = useState(false);
+
+  const handleRegenerate = async () => {
+    if (!window.confirm("Regenerate projects tailored specifically to your academic year and verified skill gaps?")) {
+      return;
+    }
+    try {
+      setRegenerating(true);
+      const res = await roadmapApi.regenerateProjects();
+      setProjects(res.data || []);
+    } catch (err) {
+      alert('Error regenerating projects: ' + err.message);
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   if (loading) {
     return <div style={{ padding: '40px', textAlign: 'center' }}>Loading recommended projects...</div>;
   }
 
   return (
     <div>
-      <div className="page-header">
-        <h1 className="page-title">Recommended Placement Projects</h1>
-        <p className="page-subtitle">
-          Projects strategically recommended by the Career Twin Engine to bridge your missing technical skills and stand out to recruiters.
-        </p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 className="page-title">Recommended Placement Projects</h1>
+          <p className="page-subtitle">
+            Projects strategically personalized for your academic year and prioritized to bridge your verified skill gaps.
+          </p>
+        </div>
+        <button
+          onClick={handleRegenerate}
+          disabled={regenerating}
+          className="btn btn-primary"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <Sparkles size={16} />
+          {regenerating ? 'Regenerating...' : 'AI Refresh Recommendations'}
+        </button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>

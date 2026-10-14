@@ -62,6 +62,10 @@ public class CareerTwinEngineService {
     @Lazy
     private GeminiService geminiService;
 
+    @Autowired
+    @Lazy
+    private RoadmapService roadmapService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
@@ -303,24 +307,10 @@ public class CareerTwinEngineService {
             roadmapPhaseRepository.saveAll(defaultPhases);
         }
 
-        // 2. Project Recommendations
+        // 2. Project Recommendations (Student-Specific & Year-Aligned)
         List<ProjectRecommendation> existingProjects = projectRecommendationRepository.findByUserId(userId);
         if (existingProjects.isEmpty()) {
-            List<ProjectRecommendation> defaultProjects = List.of(
-                    new ProjectRecommendation(user, "AI-Powered Job Application Tracker REST API",
-                            "A production-ready backend service that allows applicants to track company submissions, upload resumes, and receive status reminders.",
-                            "INTERMEDIATE", "[\"Spring Boot\", \"REST APIs\", \"MySQL\", \"JWT\", \"JPA\"]",
-                            "Matches the backend developer stack perfectly and showcases enterprise architectural knowledge."),
-                    new ProjectRecommendation(user, "High-Throughput URL Shortener with Analytics",
-                            "A scalable URL redirection engine handling concurrent requests with caching, rate limiting, and click analytics.",
-                            "ADVANCED", "[\"Java\", \"Spring Boot\", \"Redis\", \"MySQL\", \"Docker\"]",
-                            "Demonstrates concurrency, caching patterns, and distributed system design prized in tier-1 product companies."),
-                    new ProjectRecommendation(user, "Student Attendance & Fee Management Portal",
-                            "A role-based university portal featuring admin, teacher, and student dashboards with report generation.",
-                            "BEGINNER", "[\"Java\", \"Spring Boot\", \"React\", \"MySQL\"]",
-                            "Solid full-stack starter project demonstrating end-to-end CRUD, database transactions, and clean UI integration.")
-            );
-            projectRecommendationRepository.saveAll(defaultProjects);
+            roadmapService.generatePersonalizedProjects(userId, false);
         }
 
         // 3. Weekly Challenges

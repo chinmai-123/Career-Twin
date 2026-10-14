@@ -157,6 +157,36 @@ const RegisterScreen = ({ navigation }) => {
             </View>
           </View>
 
+          {/* Academic Year of Study Selection */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Year of Study *</Text>
+            <View style={styles.yearChipRow}>
+              {['1st Year', '2nd Year', '3rd Year', '4th Year'].map((yr) => {
+                const isSelected = formData.year === yr;
+                return (
+                  <TouchableOpacity
+                    key={yr}
+                    style={[
+                      styles.yearChip,
+                      isSelected ? styles.yearChipActive : styles.yearChipInactive,
+                    ]}
+                    onPress={() => updateField('year', yr)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.yearChipText,
+                        isSelected ? styles.yearChipTextActive : styles.yearChipTextInactive,
+                      ]}
+                    >
+                      {yr}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Register Button */}
           <TouchableOpacity
             style={styles.registerBtn}
@@ -273,6 +303,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
     color: colors.text,
+  },
+  yearChipRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  yearChip: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  yearChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  yearChipInactive: {
+    backgroundColor: colors.surfaceSecondary,
+    borderColor: colors.border,
+  },
+  yearChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  yearChipTextActive: {
+    color: '#ffffff',
+  },
+  yearChipTextInactive: {
+    color: colors.textSecondary,
   },
   registerBtn: {
     flexDirection: 'row',

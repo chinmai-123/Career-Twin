@@ -119,6 +119,7 @@ export const roadmapApi = {
   togglePhase: (phaseId) => api.post(`/roadmap/phases/${phaseId}/toggle`),
   getProjects: () => api.get('/roadmap/projects'),
   updateProjectStatus: (projectId, status) => api.patch(`/roadmap/projects/${projectId}/status`, { status }),
+  regenerateProjects: () => api.post('/roadmap/projects/regenerate'),
 };
 
 export const challengeApi = {
