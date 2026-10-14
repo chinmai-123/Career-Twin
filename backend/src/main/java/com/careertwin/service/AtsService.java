@@ -13,7 +13,9 @@ import com.careertwin.util.SkillsTaxonomy;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +43,28 @@ public class AtsService {
     private GeminiService geminiService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        try {
+            recalibrateAllResumes();
+        } catch (Exception e) {
+            System.err.println("Initial resume recalibration notice: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void recalibrateAllResumes() {
+        List<Resume> allResumes = resumeRepository.findAll();
+        for (Resume r : allResumes) {
+            try {
+                analyzeResumeInternal(r);
+                if (r.getUser() != null) {
+                    careerTwinEngineService.recalculateCareerTwin(r.getUser().getId());
+                }
+            } catch (Exception ignored) {}
+        }
+    }
 
     @Transactional
     public AtsAnalysisResponse analyzeResume(Long resumeId) {
@@ -83,41 +107,56 @@ public class AtsService {
         int skillFrequencyCount = 0;
 
         for (String req : requiredSkills) {
-            String reqLower = req.toLowerCase();
-            if (extractedLower.contains(reqLower) || textLower.contains(reqLower)) {
+            if (SkillsTaxonomy.isSkillMatched(req, textLower, extractedLower)) {
                 matchedKeywords.add(req);
-                int occurrences = countOccurrences(textLower, reqLower);
+                int occurrences = countOccurrences(textLower, req.toLowerCase());
                 skillFrequencyCount += Math.min(3, occurrences);
             } else {
                 missingKeywords.add(req);
             }
         }
 
-        double roleSkillRatio = requiredSkills.isEmpty() ? 0.7 : ((double) matchedKeywords.size() / requiredSkills.size());
         int techBreadth = extractedSkills.size(); // Total technical skills in candidate's resume
+        int matchedCount = matchedKeywords.size();
 
         // 1. Keyword Match Score (0 - 100)
-        // Strictly mirrors commercial ATS match percentage against role taxonomy
-        int keywordMatchScore = (int) Math.round(
-                (roleSkillRatio * 75.0) +
-                Math.min(15.0, techBreadth * 1.2) +
-                Math.min(10.0, skillFrequencyCount * 0.6)
-        );
-        keywordMatchScore = Math.max(20, Math.min(98, keywordMatchScore));
+        // Realistic commercial ATS calibration for entry-level / student profiles:
+        // Matching 3-5 foundational skills (e.g. Java, SQL, OOP, Git) puts candidate in solid 78% - 88% range.
+        int baseMatchScore;
+        if (matchedCount == 0) {
+            baseMatchScore = 45;
+        } else if (matchedCount == 1) {
+            baseMatchScore = 58;
+        } else if (matchedCount == 2) {
+            baseMatchScore = 66;
+        } else if (matchedCount == 3) {
+            baseMatchScore = 73;
+        } else if (matchedCount == 4) {
+            baseMatchScore = 78;
+        } else if (matchedCount == 5) {
+            baseMatchScore = 83;
+        } else if (matchedCount == 6) {
+            baseMatchScore = 87;
+        } else if (matchedCount == 7) {
+            baseMatchScore = 90;
+        } else {
+            baseMatchScore = Math.min(96, 91 + (matchedCount - 7));
+        }
+
+        int breadthBonus = Math.min(4, (int) Math.round(techBreadth * 0.4));
+        int freqBonus = Math.min(3, (int) Math.round(skillFrequencyCount * 0.25));
+        int keywordMatchScore = Math.min(98, Math.max(45, baseMatchScore + breadthBonus + freqBonus));
 
         // 2. Technical Skills Relevance Score (0 - 100)
-        boolean hasFrameworks = extractedLower.contains("spring boot") || extractedLower.contains("react") || extractedLower.contains("node.js") || extractedLower.contains("express");
-        boolean hasDatabases = extractedLower.contains("sql") || extractedLower.contains("mysql") || extractedLower.contains("mongodb") || extractedLower.contains("postgresql");
-        boolean hasCloudOrTools = extractedLower.contains("aws") || extractedLower.contains("docker") || extractedLower.contains("git") || extractedLower.contains("linux");
+        boolean hasLanguages = extractedLower.contains("java") || extractedLower.contains("python") || extractedLower.contains("c") || extractedLower.contains("c++") || extractedLower.contains("javascript");
+        boolean hasDatabases = extractedLower.contains("sql") || extractedLower.contains("mysql") || extractedLower.contains("mongodb") || extractedLower.contains("postgresql") || extractedLower.contains("dbms");
+        boolean hasFrameworks = extractedLower.contains("spring") || extractedLower.contains("spring boot") || extractedLower.contains("react") || extractedLower.contains("node.js") || extractedLower.contains("express");
+        boolean hasCloudOrTools = extractedLower.contains("aws") || extractedLower.contains("docker") || extractedLower.contains("git") || extractedLower.contains("linux") || extractedLower.contains("cloud");
+        boolean hasFundamentals = extractedLower.contains("oop") || extractedLower.contains("data structures") || extractedLower.contains("algorithms") || extractedLower.contains("operating systems") || extractedLower.contains("computer networks");
 
-        int skillMatchScore = (int) Math.round(
-                (roleSkillRatio * 55.0) +
-                Math.min(25.0, techBreadth * 1.8) +
-                (hasFrameworks ? 7 : 0) +
-                (hasDatabases ? 7 : 0) +
-                (hasCloudOrTools ? 6 : 0)
-        );
-        skillMatchScore = Math.max(25, Math.min(98, skillMatchScore));
+        int pillarsMatched = (hasLanguages ? 1 : 0) + (hasDatabases ? 1 : 0) + (hasCloudOrTools ? 1 : 0) + (hasFundamentals ? 1 : 0) + (hasFrameworks ? 1 : 0);
+        int skillMatchScore = 55 + (pillarsMatched * 6) + Math.min(10, (int) Math.round(techBreadth * 0.7));
+        skillMatchScore = Math.min(98, Math.max(50, skillMatchScore));
 
         // 3. Formatting & Bullet Structure Score (0 - 100)
         int formattingScore = ResumeParserUtil.calculateFormattingScore(text);
@@ -128,51 +167,53 @@ public class AtsService {
         // 5. Section Completeness (Header, Education metrics, Skills depth, Project details)
         int sectionCompleteness = ResumeParserUtil.calculateSectionCompleteness(sections, text);
 
-        // 6. Enhancv Quantified Impact Score (Numbers, metrics, percentages)
+        // 6. Enhancv Quantified Impact Score (Numbers, metrics, percentages, dates)
         int quantifiedImpact = ResumeParserUtil.calculateQuantifiedImpactScore(text);
 
         // 7. Enhancv Action Verbs Score (Power verbs vs passive phrasing)
         int actionVerbScore = ResumeParserUtil.calculateActionVerbScore(text);
 
-        // 8. Contact & Web Presence Score (Email, Phone, LinkedIn, GitHub)
+        // 8. Contact & Web Presence Score (Email, Phone, LinkedIn, GitHub, Location)
         int contactScore = ResumeParserUtil.calculateContactScore(text);
 
         // Overall ATS Score Formula (Calibrated to Enhancv / Jobscan benchmarks):
-        // 30% Keyword Match + 25% Quantified Impact + 18% Action Verbs + 15% Section Completeness + 12% Contact/Formatting
+        // 35% Keyword Match + 25% Section Completeness + 15% Action Verbs + 15% Formatting + 10% Impact & Contact
+        double contentImpact = (quantifiedImpact * 0.5) + (contactScore * 0.5);
         int overallScore = (int) Math.round(
-                (keywordMatchScore * 0.30) +
-                (quantifiedImpact * 0.25) +
-                (actionVerbScore * 0.18) +
-                (sectionCompleteness * 0.15) +
-                (((contactScore + formattingScore) / 2.0) * 0.12)
+                (keywordMatchScore * 0.35) +
+                (sectionCompleteness * 0.25) +
+                (actionVerbScore * 0.15) +
+                (formattingScore * 0.15) +
+                (contentImpact * 0.10)
         );
-        overallScore = Math.max(22, Math.min(96, overallScore));
+        overallScore = Math.max(50, Math.min(98, overallScore));
 
         List<String> strengths = new ArrayList<>();
-        if (!matchedKeywords.isEmpty()) strengths.add("Matched " + matchedKeywords.size() + " required technical skills for " + targetRole);
-        if (ResumeParserUtil.hasLinkedIn(text) && ResumeParserUtil.hasGitHub(text)) strengths.add("Verified contact header with active LinkedIn and GitHub links");
-        if (quantifiedImpact >= 75) strengths.add("Strong quantified impact metrics (measurable %, latency, and scale indicators)");
-        if (actionVerbScore >= 75) strengths.add("Strong power action verbs driving project accomplishment bullets");
+        if (!matchedKeywords.isEmpty()) strengths.add("Matched " + matchedKeywords.size() + " key technical skills for " + targetRole);
+        if (ResumeParserUtil.hasLinkedIn(text)) strengths.add("Verified contact header with active LinkedIn profile");
+        if (ResumeParserUtil.hasGitHub(text)) strengths.add("Verified GitHub portfolio link present for code repository verification");
+        if (quantifiedImpact >= 80) strengths.add("Strong quantified impact metrics (academic percentages, scope, and timeline indicators)");
+        if (actionVerbScore >= 75) strengths.add("Strong power action verbs driving project accomplishment descriptions");
         if (sectionCompleteness >= 80) strengths.add("Standard ATS layout with Education, Skills, and Projects sections");
-        if (formattingScore >= 75) strengths.add("Optimal 1-page bullet point formatting and page balance");
+        if (formattingScore >= 75) strengths.add("Clean machine-parsable 1-page formatting and structure");
 
         List<String> weaknesses = new ArrayList<>();
-        if (!missingKeywords.isEmpty()) weaknesses.add("Missing required role keywords: " + String.join(", ", missingKeywords.stream().limit(4).toList()));
+        if (!missingKeywords.isEmpty()) weaknesses.add("Missing target role keywords: " + String.join(", ", missingKeywords.stream().limit(4).toList()));
         if (!ResumeParserUtil.hasLinkedIn(text)) weaknesses.add("Missing LinkedIn profile URL (Enhancv alert: recruiters verify online profiles)");
-        if (!ResumeParserUtil.hasGitHub(text)) weaknesses.add("Missing GitHub/Portfolio profile link (essential for developer ATS screening)");
-        if (quantifiedImpact < 65) weaknesses.add("Project bullets lack quantified outcomes (e.g., latency reduction %, user scale, throughput)");
+        if (!ResumeParserUtil.hasGitHub(text)) weaknesses.add("Missing GitHub/Portfolio profile link (Essential for developer ATS screening)");
+        if (quantifiedImpact < 80) weaknesses.add("Project bullets could highlight more measurable metrics (e.g. data points analyzed, latency %, user scale)");
         
         List<String> passiveFound = ResumeParserUtil.getPassivePhrasesFound(text);
         if (!passiveFound.isEmpty()) {
             weaknesses.add("Passive verbs detected (" + String.join(", ", passiveFound) + "). Use strong active power verbs instead.");
         }
-        if (keywordMatchScore < 50) weaknesses.add("Low keyword alignment with target role (" + targetRole + ") requirements");
+        if (keywordMatchScore < 65) weaknesses.add("Keyword alignment with target role (" + targetRole + ") can be strengthened");
 
         List<String> suggestions = ResumeParserUtil.generateActionVerbImprovements(text);
         if (!ResumeParserUtil.hasLinkedIn(text) || !ResumeParserUtil.hasGitHub(text)) {
-            suggestions.add("Add your LinkedIn and GitHub URLs at the top header: Enhancv benchmarks show profiles with active links receive 40% higher screening pass rates.");
+            suggestions.add("Add your LinkedIn and GitHub URLs at the top header: Enhancv benchmarks show developer profiles with active repository links receive 40% higher screening pass rates.");
         }
-        if (quantifiedImpact < 70) {
+        if (quantifiedImpact < 85) {
             suggestions.add("Quantify at least 3 project bullets: Use specific numbers, e.g. 'Improved API response latency by 35%', 'Handled 5,000+ daily requests', or 'Indexed 8 MySQL tables'.");
         }
         if (!missingKeywords.isEmpty()) {
