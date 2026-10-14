@@ -26,6 +26,7 @@ public class AssessmentResultDto {
         private String optionD;
         private String selectedOption;
         private String correctOption;
+        @com.fasterxml.jackson.annotation.JsonProperty("isCorrect")
         private boolean isCorrect;
         private String explanation;
 
@@ -96,11 +97,23 @@ public class AssessmentResultDto {
             this.correctOption = correctOption;
         }
 
+        @com.fasterxml.jackson.annotation.JsonProperty("isCorrect")
         public boolean isCorrect() {
             return isCorrect;
         }
 
+        @com.fasterxml.jackson.annotation.JsonProperty("isCorrect")
         public void setCorrect(boolean correct) {
+            isCorrect = correct;
+        }
+
+        @com.fasterxml.jackson.annotation.JsonProperty("correct")
+        public boolean getCorrect() {
+            return isCorrect;
+        }
+
+        @com.fasterxml.jackson.annotation.JsonProperty("correct")
+        public void setCorrectValue(boolean correct) {
             isCorrect = correct;
         }
 

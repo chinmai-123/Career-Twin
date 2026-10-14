@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { assessmentApi, careerGoalApi, careerTwinApi } from '../services/api';
 import {
   Award,
@@ -29,20 +29,24 @@ const mcqCategories = [
 
 const codingCategories = ['ALL', 'DSA', 'BACKEND', 'SQL', 'FRONTEND'];
 
-const SkillVerificationPage = () => {
+const SkillVerificationPage = ({ defaultTab }) => {
+  const location = useLocation();
+  const initialTab = defaultTab || (location.pathname.includes('coding') ? 'CODING' : 'MCQ');
+
   // Main Tab: 'MCQ' or 'CODING'
-  const [activeTab, setActiveTab] = useState('MCQ');
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Student Goal
   const [targetRole, setTargetRole] = useState('Backend Developer');
 
   // MCQ State
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedMcqDifficulty, setSelectedMcqDifficulty] = useState('ADAPTIVE');
   const [isTestActive, setIsTestActive] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(900); // 15 mins
+  const [timeLeft, setTimeLeft] = useState(600); // 10 mins
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -60,6 +64,14 @@ const SkillVerificationPage = () => {
   const [codingLoading, setCodingLoading] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    } else if (location.pathname.includes('coding')) {
+      setActiveTab('CODING');
+    }
+  }, [defaultTab, location.pathname]);
 
   // Load Goal, User Level & Coding Challenges
   useEffect(() => {
@@ -172,11 +184,12 @@ const SkillVerificationPage = () => {
   const handleStartTest = async () => {
     setLoading(true);
     try {
-      const res = await assessmentApi.getQuestions(selectedCategory);
+      const diffParam = selectedMcqDifficulty === 'ADAPTIVE' ? '' : selectedMcqDifficulty;
+      const res = await assessmentApi.getQuestions(selectedCategory, diffParam);
       setQuestions(res.data || []);
       setAnswers({});
       setCurrentIndex(0);
-      setTimeLeft(900);
+      setTimeLeft(600); // 10 mins
       setIsTestActive(true);
     } catch (err) {
       alert('Failed to load questions: ' + err.message);
@@ -196,7 +209,7 @@ const SkillVerificationPage = () => {
     try {
       const res = await assessmentApi.submitAssessment({
         category: selectedCategory,
-        timeTakenSeconds: 900 - timeLeft,
+        timeTakenSeconds: 600 - timeLeft,
         answers: answers
       });
       navigate('/assessment-results', { state: { result: res.data } });
@@ -609,6 +622,54 @@ const SkillVerificationPage = () => {
                   </p>
                 </div>
               ))}
+            </div>
+
+            {/* Difficulty Tier Selector */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: '700', color: '#475569', marginBottom: '8px' }}>
+                Select Assessment Difficulty Tier:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+                {[
+                  { key: 'ADAPTIVE', label: `🎯 Adaptive`, badge: userLevel?.recommendedDifficulty || 'EASY', desc: 'Auto-calibrated to level' },
+                  { key: 'EASY', label: '🟢 Easy', badge: 'Tier 1', desc: 'Foundational' },
+                  { key: 'MEDIUM', label: '🟡 Medium', badge: 'Tier 2', desc: 'Intermediate' },
+                  { key: 'HARD', label: '🔴 Hard', badge: 'Tier 3', desc: 'MNC Placement' }
+                ].map((tier) => (
+                  <button
+                    key={tier.key}
+                    type="button"
+                    onClick={() => setSelectedMcqDifficulty(tier.key)}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: '8px',
+                      border: selectedMcqDifficulty === tier.key ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                      background: selectedMcqDifficulty === tier.key ? '#eff6ff' : '#ffffff',
+                      color: selectedMcqDifficulty === tier.key ? '#1e40af' : '#334155',
+                      fontWeight: selectedMcqDifficulty === tier.key ? '700' : '500',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ fontWeight: '700' }}>{tier.label}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>{tier.desc}</div>
+                    <span style={{
+                      display: 'inline-block',
+                      marginTop: '4px',
+                      fontSize: '0.68rem',
+                      background: tier.key === 'ADAPTIVE' ? '#dbeafe' : '#f1f5f9',
+                      color: tier.key === 'ADAPTIVE' ? '#1e40af' : '#475569',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      fontWeight: '600'
+                    }}>
+                      {tier.badge}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button

@@ -104,7 +104,59 @@ const AssessmentResultPage = () => {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {result.reviewList && result.reviewList.map((item, idx) => {
-            const isCorrect = item.isCorrect;
+            const isCodingCase = Boolean(item.testCaseIndex || item.expectedOutput);
+            const isCorrect = isCodingCase
+              ? (item.passed === true)
+              : (item.isCorrect === true || item.correct === true || (item.selectedOption && item.correctOption && item.selectedOption.trim().toUpperCase() === item.correctOption.trim().toUpperCase()));
+
+            if (isCodingCase) {
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '18px',
+                    borderRadius: '10px',
+                    border: isCorrect ? '1px solid #a7f3d0' : '1px solid #fecaca',
+                    background: isCorrect ? '#f0fdf4' : '#fff5f5'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <strong style={{ fontSize: '0.98rem', color: '#1e293b' }}>
+                      Test Case #{item.testCaseIndex || idx + 1}: {item.input || 'Automated Unit Case'}
+                    </strong>
+                    <span className={`badge ${isCorrect ? 'badge-low' : 'badge-high'}`}>
+                      {isCorrect ? 'Passed' : 'Failed'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '20px', fontSize: '0.86rem', marginTop: '10px' }}>
+                    <div>
+                      <span style={{ color: '#64748b' }}>Expected Output: </span>
+                      <strong style={{ color: '#16a34a' }}>{item.expectedOutput || 'Success'}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#64748b' }}>Actual Output: </span>
+                      <strong style={{ color: isCorrect ? '#16a34a' : '#dc2626' }}>{item.actualOutput || (isCorrect ? 'Match' : 'Failed')}</strong>
+                    </div>
+                  </div>
+
+                  {item.errorMessage && (
+                    <div style={{
+                      marginTop: '10px',
+                      padding: '10px 12px',
+                      background: '#ffffff',
+                      borderRadius: '6px',
+                      fontSize: '0.82rem',
+                      color: '#dc2626',
+                      border: '1px solid #fecaca'
+                    }}>
+                      <strong>Error: </strong>{item.errorMessage}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <div
                 key={idx}
@@ -153,7 +205,7 @@ const AssessmentResultPage = () => {
                     color: '#475569',
                     border: '1px solid #e2e8f0'
                   }}>
-                    <strong>Explanation: </strong> {item.explanation}
+                    <strong>Explanation: </strong>{item.explanation}
                   </div>
                 )}
               </div>

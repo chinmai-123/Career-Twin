@@ -47,7 +47,8 @@ function App() {
             <Route path="/resume-history" element={<ResumeHistoryPage />} />
             <Route path="/ats" element={<AtsAnalysisPage />} />
             <Route path="/coding-profiles" element={<CodingProfilesPage />} />
-            <Route path="/skill-verification" element={<SkillVerificationPage />} />
+            <Route path="/skill-verification" element={<SkillVerificationPage defaultTab="MCQ" />} />
+            <Route path="/coding-assessment" element={<SkillVerificationPage defaultTab="CODING" />} />
             <Route path="/assessment-results" element={<AssessmentResultPage />} />
             <Route path="/skill-gap" element={<SkillGapPage />} />
             <Route path="/roadmap" element={<RoadmapPage />} />

@@ -37,8 +37,9 @@ const Sidebar = () => {
         { name: 'Resume Upload', path: '/resume', icon: FileText },
         { name: 'Resume History', path: '/resume-history', icon: History },
         { name: 'ATS Analyzer', path: '/ats', icon: CheckCircle2 },
-        { name: 'Coding Profiles', path: '/coding-profiles', icon: Code2 },
-        { name: 'Skill Verification', path: '/skill-verification', icon: Award },
+        { name: 'Coding Profiles', path: '/coding-profiles', icon: Terminal },
+        { name: 'Skill Verification', path: '/skill-verification', icon: Award, badge: 'MCQ' },
+        { name: 'Coding Assessment', path: '/coding-assessment', icon: Code2, badge: 'Live' },
       ]
     },
     {

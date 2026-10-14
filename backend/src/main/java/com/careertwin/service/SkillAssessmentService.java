@@ -155,8 +155,8 @@ public class SkillAssessmentService {
             }
         }
 
-        // If pool has fewer than 10 questions in that specific difficulty, backfill with remaining questions in category
-        if (pool.size() < 10) {
+        // If pool has fewer than 5 questions in that specific difficulty, backfill with remaining questions in category
+        if (pool.size() < 5) {
             List<AssessmentQuestion> allForCategory;
             if (categoryFilter) {
                 allForCategory = questionRepository.findByCategory(category.toUpperCase());
@@ -171,7 +171,7 @@ public class SkillAssessmentService {
         }
 
         Collections.shuffle(pool);
-        return pool.stream().limit(10).map(this::mapToQuestionDto).collect(Collectors.toList());
+        return pool.stream().limit(5).map(this::mapToQuestionDto).collect(Collectors.toList());
     }
 
     @Transactional
