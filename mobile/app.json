@@ -8,7 +8,9 @@
     "scheme": "careertwin",
     "userInterfaceStyle": "light",
     "splash": {
-      "backgroundColor": "#2563eb"
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#151E27"
     },
     "ios": {
       "supportsTablet": true
@@ -16,7 +18,7 @@
     "android": {
       "package": "com.careertwin.app",
       "adaptiveIcon": {
-        "backgroundColor": "#2563eb",
+        "backgroundColor": "#151E27",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

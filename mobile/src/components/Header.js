@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../theme/colors';
 
@@ -7,6 +7,7 @@ const Header = ({
   title,
   subtitle,
   onBack,
+  showLogo = true,
   rightAction,
   rightIcon,
   rightColor,
@@ -20,6 +21,14 @@ const Header = ({
             <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
+          ) : showLogo ? (
+            <View style={styles.headerLogoCircle}>
+              <Image
+                source={require('../../assets/logo.png')}
+                style={styles.headerLogoImg}
+                resizeMode="contain"
+              />
+            </View>
           ) : null}
           <View style={styles.titleGroup}>
             <Text style={styles.title} numberOfLines={1}>{title}</Text>
@@ -59,6 +68,25 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 14,
     padding: 4,
+  },
+  headerLogoCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: '#151E27',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    overflow: 'hidden',
+    shadowColor: '#151E27',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerLogoImg: {
+    width: 32,
+    height: 32,
   },
   titleGroup: {
     flex: 1,

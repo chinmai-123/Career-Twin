@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -105,6 +106,18 @@ const DashboardScreen = ({ navigation }) => {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
     >
+      {/* Brand Logo Header */}
+      <View style={styles.brandBar}>
+        <View style={styles.brandLogoCircle}>
+          <Image
+            source={require('../../assets/logo.png')}
+            style={styles.brandLogoImg}
+            resizeMode="contain"
+          />
+        </View>
+        <Text style={styles.brandTitleText}>CareerTwin</Text>
+      </View>
+
       {/* Top Welcome Header */}
       <View style={styles.header}>
         <View>
@@ -375,6 +388,31 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 16,
     paddingBottom: 30,
+  },
+  brandBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  brandLogoCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#151E27',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  brandLogoImg: {
+    width: 26,
+    height: 26,
+  },
+  brandTitleText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.text,
+    letterSpacing: -0.3,
   },
   header: {
     flexDirection: 'row',

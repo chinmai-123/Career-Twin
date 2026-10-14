@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -74,6 +75,16 @@ const RegisterScreen = ({ navigation }) => {
             <Ionicons name="settings-outline" size={16} color={colors.textSecondary} />
             <Text style={styles.serverConfigText}>Server IP</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.logoRow}>
+          <View style={styles.logoCircle}>
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         <Text style={styles.title}>Create Student Account</Text>
@@ -257,6 +268,28 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  logoRow: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  logoCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: '#151E27',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#151E27',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 56,
+    height: 56,
   },
   title: {
     fontSize: 26,

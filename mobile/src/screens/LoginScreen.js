@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -68,7 +69,11 @@ const LoginScreen = ({ navigation }) => {
         {/* Brand Header */}
         <View style={styles.header}>
           <View style={styles.logoCircle}>
-            <Ionicons name="sparkles" size={32} color="#ffffff" />
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
           <Text style={styles.brandTitle}>CareerTwin</Text>
           <Text style={styles.brandSubtitle}>AI-Powered Placement Readiness Platform</Text>
@@ -203,18 +208,23 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    backgroundColor: '#151E27',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary,
+    shadowColor: '#151E27',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 10,
-    elevation: 6,
+    elevation: 8,
     marginBottom: 12,
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 62,
+    height: 62,
   },
   brandTitle: {
     fontSize: 28,
