@@ -17,7 +17,8 @@ import {
   FileBarChart,
   User,
   Settings,
-  Bot
+  Bot,
+  Terminal
 } from 'lucide-react';
 
 const Sidebar = () => {
