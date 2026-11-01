@@ -1,17 +1,37 @@
 import storage from '../utils/storage';
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 
 const STORAGE_KEY = '@careertwin_api_base_url';
 
+export const CURRENT_HOST_IP = '192.168.1.33';
+
 // Default presets
 export const PRESETS = {
-  PHYSICAL_DEVICE: 'http://192.168.1.13:8085/api',
+  PHYSICAL_DEVICE: `http://${CURRENT_HOST_IP}:8085/api`,
   ANDROID_EMULATOR: 'http://10.0.2.2:8085/api',
   LOCALHOST: 'http://localhost:8085/api',
 };
 
+// Auto-detect Metro Bundler Host IP if running via Expo / Dev
+export const getAutoDetectedHost = () => {
+  try {
+    const scriptURL = NativeModules.SourceCode?.scriptURL;
+    if (scriptURL) {
+      const match = scriptURL.match(/(?:https?|exp):\/\/([^/:]+)/);
+      if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+        return `http://${match[1]}:8085/api`;
+      }
+    }
+  } catch (e) {
+    // silent
+  }
+  return null;
+};
+
 // Default fallback depending on environment
 const getDefaultBaseUrl = () => {
+  const auto = getAutoDetectedHost();
+  if (auto) return auto;
   if (Platform.OS === 'android') {
     return PRESETS.PHYSICAL_DEVICE;
   }
@@ -23,32 +43,40 @@ let currentBaseUrl = getDefaultBaseUrl();
 export const initBaseUrl = async () => {
   try {
     const saved = await storage.getItem(STORAGE_KEY);
-    if (saved && saved.trim()) {
+    // Ignore legacy hardcoded IP if DHCP reallocated
+    if (saved && saved.trim() && !saved.includes('192.168.1.13')) {
       currentBaseUrl = saved.trim();
       return currentBaseUrl;
     }
 
-    // Auto-detect environment if no manual override is saved
+    // Auto-detect if running on Android Studio / AVD Emulator
     if (Platform.OS === 'android') {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1000);
+        const timeoutId = setTimeout(() => controller.abort(), 800);
         const res = await fetch('http://10.0.2.2:8085/api/auth/demo-credentials', {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
         if (res.ok) {
-          // Detected running inside Android Studio / AVD Emulator
           currentBaseUrl = PRESETS.ANDROID_EMULATOR;
           return currentBaseUrl;
         }
       } catch (e) {
-        // Not on emulator or 10.0.2.2 timed out -> use physical LAN IP
-        currentBaseUrl = PRESETS.PHYSICAL_DEVICE;
+        // Not on emulator
       }
     }
+
+    // Auto-detect from Metro bundler host IP
+    const auto = getAutoDetectedHost();
+    if (auto) {
+      currentBaseUrl = auto;
+      return currentBaseUrl;
+    }
+
+    currentBaseUrl = getDefaultBaseUrl();
   } catch (err) {
-    // Silent fallback
+    currentBaseUrl = getDefaultBaseUrl();
   }
   return currentBaseUrl;
 };

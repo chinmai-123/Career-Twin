@@ -175,7 +175,7 @@ const ServerConfigScreen = ({ navigation }) => {
       <View style={styles.customCard}>
         <TextInput
           style={styles.customInput}
-          placeholder="http://192.168.1.XX:8085/api"
+          placeholder="http://192.168.1.33:8085/api"
           value={customInput}
           onChangeText={setCustomInput}
           autoCapitalize="none"

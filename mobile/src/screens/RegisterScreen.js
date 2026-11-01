@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { getBaseUrl } from '../config/apiConfig';
 import colors from '../theme/colors';
 
 const RegisterScreen = ({ navigation }) => {
@@ -50,7 +51,21 @@ const RegisterScreen = ({ navigation }) => {
       });
       Alert.alert('Account Created', 'Registration successful! You are now logged in.');
     } catch (err) {
-      Alert.alert('Registration Failed', err.message || 'Could not register account.');
+      const msg = (err && err.message) || '';
+      if (
+        msg.toLowerCase().includes('network') ||
+        msg.toLowerCase().includes('timeout') ||
+        msg.toLowerCase().includes('refused') ||
+        msg.toLowerCase().includes('failed')
+      ) {
+        Alert.alert(
+          'Backend Connection Issue',
+          `Could not reach the CareerTwin server at:\n${getBaseUrl()}\n\n1. Ensure Spring Boot is running on port 8085.\n2. Ensure your phone and PC are on the same Wi-Fi network.`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Registration Failed', msg || 'Could not register account.');
+      }
     } finally {
       setLoading(false);
     }
